@@ -58,7 +58,7 @@ const navItems: NavItem[] = [
 ];
 
 const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<string>(navItems[0]?.Name);
+  const [currentTab] = useState<string>(navItems[0]?.Name);
   const {
     token: { colorBgContainer },
   } = theme.useToken();

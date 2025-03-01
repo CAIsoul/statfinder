@@ -20,7 +20,7 @@ const Sider: React.FC<SiderProp> = ({ colorBgContainer, navItems }) => {
                 icon: React.createElement(Icon),
                 label: Label,
                 children: SubItems?.map((subItem) => {
-                    const { Name: subName, Label, Route } = subItem;
+                    const { Label, Route } = subItem;
                     return {
                         key: Route,
                         label: Label,
