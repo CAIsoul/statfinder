@@ -6,9 +6,9 @@ import { ProjectOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons';
 import Header from './components/Header/Header';
 import Sider from './components/Sider/Sider';
 import './App.scss'
-import SprintSummaryPage from './pages/SprintSummaryPage/SprintSummaryPage';
+import SprintSummaryPage from './models/pages/SprintSummaryPage/SprintSummaryPage';
 import { NavItem } from './models/NavItem';
-import WelcomePage from './pages/WelcomePage/WelcomePage';
+import WelcomePage from './models/pages/WelcomePage/WelcomePage';
 
 const navItems: NavItem[] = [
   {
