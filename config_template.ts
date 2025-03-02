@@ -1,9 +1,9 @@
 const config: any = {
     development: {
         debug: true,
-        jiraBaseUrl: "https://transfinder.atlassian.net",
-        jiraUsername: "jiaqi.cai@transfinder.com",
-        jiraToken: "pTmEC07MuUcXfKQKnn2M46D6",
+        jiraBaseUrl: "",
+        jiraUsername: "",
+        jiraToken: "",
     },
     production: {
         debug: false,
