@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import config from '../../config';
-import { Board, Sprint } from '../models/JiraData';
+import { Board, Issue, Sprint } from '../models/JiraData';
 
 const { baseApiUrl } = config;
 const BASE_URL: string = baseApiUrl;
@@ -19,7 +19,7 @@ class JiraDataService {
 
     async getSprintByIds(sprintId: number): Promise<any[]> {
         try {
-            const params = { 'sprint_id': sprintId };
+            const params = { sprintId };
             const response: AxiosResponse<any> = await this._axios.get('/get-sprint-data', { params });
 
             return response.data;
@@ -44,12 +44,24 @@ class JiraDataService {
 
     async getSprintsByBoardId(boardId: number): Promise<Sprint[]> {
         try {
-            const params = { board_id: boardId };
+            const params = { boardId };
 
             const response: AxiosResponse<any> = await this._axios.get('/get-board-sprints', { params });
             return response.data;
         } catch (error) {
             console.log("Error fetching sprints:", error);
+            throw error;
+        }
+    }
+
+    async getIssuesBySprintId(sprintId: number): Promise<Issue[]> {
+        try {
+            const params = { sprintId };
+            const response: AxiosResponse<any> = await this._axios.get('/get-sprint-issues', { params });
+            return response.data;
+
+        } catch (error) {
+            console.log("Error fetching issues:", error);
             throw error;
         }
     }

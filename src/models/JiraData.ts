@@ -4,6 +4,10 @@ export enum BoardTypeEnum {
     KANBAN = 'kanban',
 }
 
+export enum SprintStateEnum {
+    CLOSED = 'closed',
+}
+
 export interface Board {
     id: number;
     name: string;
@@ -29,4 +33,16 @@ export interface Project {
 export interface Sprint {
     id: number;
     name: string;
+    state: SprintStateEnum;
+    startDate: string;
+    endDate: string;
+    completeDate: string;
+    originBoardId: number;
+    url: string;
+}
+
+export interface Issue {
+    id: number;
+    key: string;
+    fields: any;
 }
