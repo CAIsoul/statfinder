@@ -1,10 +1,9 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import config from '../../config';
-import { Board } from '../models/JiraData';
+import { Board, Sprint } from '../models/JiraData';
 
-const { jiraBaseUrl, jiraUsername, jiraToken } = config;
-const BASE_URL: string = jiraBaseUrl;
-const BASIC_AUTH: string = `Basic ${btoa(`${jiraUsername}:${jiraToken}`)}`;
+const { baseApiUrl } = config;
+const BASE_URL: string = baseApiUrl;
 
 class JiraDataService {
     private _axios: AxiosInstance;
@@ -14,17 +13,43 @@ class JiraDataService {
             baseURL: BASE_URL,
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: BASIC_AUTH,
             },
         });
     }
 
-    async getBoards(): Promise<Board[]> {
+    async getSprintByIds(sprintId: number): Promise<any[]> {
         try {
-            const response: AxiosResponse<any> = await this._axios.get('/rest/agile/1.0/board');
+            const params = { 'sprint_id': sprintId };
+            const response: AxiosResponse<any> = await this._axios.get('/get-sprint-data', { params });
+
             return response.data;
         } catch (error) {
-            console.log("Error fetching posts:", error);
+            console.log('Error fetching sprint data: ', error);
+            throw error
+        }
+    }
+
+    async getBoards(options: any): Promise<Board[]> {
+        try {
+            const { type } = options;
+            const params = { type };
+
+            const response: AxiosResponse<any> = await this._axios.get('/get-boards', { params });
+            return response.data.values;
+        } catch (error) {
+            console.log("Error fetching boards:", error);
+            throw error;
+        }
+    }
+
+    async getSprintsByBoardId(boardId: number): Promise<Sprint[]> {
+        try {
+            const params = { board_id: boardId };
+
+            const response: AxiosResponse<any> = await this._axios.get('/get-board-sprints', { params });
+            return response.data;
+        } catch (error) {
+            console.log("Error fetching sprints:", error);
             throw error;
         }
     }

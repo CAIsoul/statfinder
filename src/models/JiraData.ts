@@ -1,7 +1,7 @@
-enum BoardTypeEnum {
-    Simple,
-    Scrum,
-    Kanban,
+export enum BoardTypeEnum {
+    SIMPLE = 'simple',
+    SCRUM = 'scrum',
+    KANBAN = 'kanban',
 }
 
 export interface Board {
@@ -24,4 +24,9 @@ export interface Project {
     projectTypeKey: string;
     simplified?: boolean;
     style?: string;
+}
+
+export interface Sprint {
+    id: number;
+    name: string;
 }

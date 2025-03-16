@@ -1,15 +1,11 @@
 const config: any = {
     development: {
         debug: true,
-        jiraBaseUrl: "",
-        jiraUsername: "",
-        jiraToken: "",
+        baseApiUrl: "",
     },
     production: {
         debug: false,
-        jiraBaseUrl: "",
-        jiraUsername: "",
-        jiraToken: "",
+        baseApiUrl: "",
     }
 }
 
