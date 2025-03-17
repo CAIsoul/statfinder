@@ -6,9 +6,11 @@ import { ProjectOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons';
 import Header from './components/Header/Header';
 import Sider from './components/Sider/Sider';
 import './App.scss'
-import SprintSummaryPage from './models/pages/SprintSummaryPage/SprintSummaryPage';
+import SprintSummaryPage from './pages/SprintSummaryPage/SprintSummaryPage';
 import { NavItem } from './models/NavItem';
-import WelcomePage from './models/pages/WelcomePage/WelcomePage';
+import WelcomePage from './pages/WelcomePage/WelcomePage';
+import { useLoading } from './components/LoadingIndicator/LoadingContext';
+import { jira } from './service/JIRA/JiraDataService';
 
 const navItems: NavItem[] = [
   {
@@ -64,6 +66,11 @@ const App: React.FC = () => {
   } = theme.useToken();
 
   const activeNavItems = navItems.find(tab => tab.Name === currentTab)?.SubItems ?? [];
+
+  const { showLoading, hideLoading } = useLoading();
+  React.useEffect(() => {
+    jira.setup({ showLoading, hideLoading });
+  }, [showLoading, hideLoading]);
 
   return (
     <Layout className='app-container'>

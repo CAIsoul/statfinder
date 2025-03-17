@@ -1,6 +1,7 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import config from '../../config';
-import { Board, Issue, Sprint } from '../models/JiraData';
+import { AxiosInstance, AxiosResponse } from 'axios';
+import config from '../../../config';
+import { Board, Issue, Sprint } from '../../models/JiraData';
+import { getAxiosInstance, setupInterceptors } from '../AxiosService';
 
 const { baseApiUrl } = config;
 const BASE_URL: string = baseApiUrl;
@@ -9,12 +10,16 @@ class JiraDataService {
     private _axios: AxiosInstance;
 
     constructor() {
-        this._axios = axios.create({
+        this._axios = getAxiosInstance({
             baseURL: BASE_URL,
             headers: {
                 'Content-Type': 'application/json',
             },
         });
+    }
+
+    setup(options: any) {
+        setupInterceptors(this._axios, options);
     }
 
     async getSprintByIds(sprintId: number): Promise<any[]> {
@@ -58,6 +63,23 @@ class JiraDataService {
         try {
             const params = { sprintId };
             const response: AxiosResponse<any> = await this._axios.get('/get-sprint-issues', { params });
+
+            // const issueDict = new Map<number, Issue>();
+            // response.data.forEach((issue: Issue) => {
+            //     if(!issue.fields.parent) {
+            //         issueDict.set(issue.id, issue);
+            //     }
+            // });
+
+            // response.data.forEach((issue: Issue) => {
+            //     if(issue.fields.parent) {
+            //         const parentIssue = issueDict.get(issue.fields.parent.id);
+            //         if(parentIssue){
+            //             parentIssue.fields.subtasks.
+            //         }
+            //     }
+            // });
+
             return response.data;
 
         } catch (error) {
