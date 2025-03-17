@@ -10,7 +10,7 @@ import SprintSummaryPage from './pages/SprintSummaryPage/SprintSummaryPage';
 import { NavItem } from './models/NavItem';
 import WelcomePage from './pages/WelcomePage/WelcomePage';
 import { useLoading } from './components/LoadingIndicator/LoadingContext';
-import { jira } from './service/JIRA/JiraDataService';
+import { jiraQuery } from './service/JIRA/JiraDataQueryService';
 
 const navItems: NavItem[] = [
   {
@@ -69,7 +69,7 @@ const App: React.FC = () => {
 
   const { showLoading, hideLoading } = useLoading();
   React.useEffect(() => {
-    jira.setup({ showLoading, hideLoading });
+    jiraQuery.setup({ showLoading, hideLoading });
   }, [showLoading, hideLoading]);
 
   return (

@@ -49,12 +49,27 @@ export interface Project {
 export interface Sprint {
     id: number;
     name: string;
+    goal: string;
     state: SprintStateEnum;
     startDate: string;
     endDate: string;
     completeDate: string;
     originBoardId: number;
-    url: string;
+
+    originalCommitted?: number;
+    originalCompleted?: number;
+    originalNotCompleted?: number;
+    originalRemoved?: number;
+    newlyAdded?: number;
+    newlyCompleted?: number;
+    newlyNotCompleted?: number;
+    totalCommitted?: number;
+    totalCompleted?: number;
+    totalHoursLogged?: number;
+    newFeatureDevelopment?: number;
+    developmentBug?: number;
+    existingBug?: number;
+    newFeatureTesting?: number;
 }
 
 export interface Issue {
@@ -144,24 +159,4 @@ export interface IssueRow {
     resolutiondate?: string;
     reporter?: string;
     children?: IssueRow[];
-}
-
-export function ConvertToIssueRow(issue: Issue): IssueRow {
-    return {
-        id: issue.id,
-        key: issue.key,
-        url: issue.self,
-
-        summary: issue.fields.summary,
-        issuetype: issue.fields.issuetype?.name,
-        status: issue.fields.status?.name,
-        priority: issue.fields.priority?.name,
-
-        description: issue.fields.description,
-        updated: issue.fields.updated,
-        duedate: issue.fields.duedate,
-        resolutiondate: issue.fields.resolutiondate,
-        reporter: issue.fields.reporter?.displayName,
-        children: issue.fields.subtasks?.length > 0 ? issue.fields.subtasks.map(s => ConvertToIssueRow(s)) : undefined,
-    }
 }

@@ -6,7 +6,7 @@ import { getAxiosInstance, setupInterceptors } from '../AxiosService';
 const { baseApiUrl } = config;
 const BASE_URL: string = baseApiUrl;
 
-class JiraDataService {
+class JiraDataQueryService {
     private _axios: AxiosInstance;
 
     constructor() {
@@ -89,4 +89,4 @@ class JiraDataService {
     }
 }
 
-export const jira = new JiraDataService();
+export const jiraQuery = new JiraDataQueryService();

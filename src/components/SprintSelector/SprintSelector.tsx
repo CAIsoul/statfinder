@@ -4,33 +4,39 @@ import { Select, Dropdown, Button, Space } from 'antd';
 import './SprintSelector.scss';
 
 import { Board, BoardTypeEnum, Sprint } from '../../models/JiraData';
-import { jira } from '../../service/JIRA/JiraDataService';
+import { jiraQuery } from '../../service/JIRA/JiraDataQueryService';
 import { UpperCaseFirstChar } from '../../service/StringFormatService';
 
 interface SelectorProp {
     onSprintSelect: any,
-    singleSelect: boolean,
+    enableMultiple: boolean,
 };
 
-const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, singleSelect = true }) => {
+const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple = false }) => {
+    const boardTypes = Object.entries(BoardTypeEnum).map(entry => ({ key: entry[0], label: UpperCaseFirstChar(entry[1]) }));
+    const [boardOptions, setBoardOptions] = useState<Board[]>([]);
+    const [sprintOptions, setSprintOptions] = useState<Sprint[]>([]);
+
+    const [selectedBoardType, setSelectedBoardType] = useState<string>();
+    const [selectedBoardId, setSelectedBoardId] = useState<number>();
+    const [selectedSprintIds, setSelectedSprintIds] = useState<number[]>([]);
+
     /**
-   * Handle when a board type is selected
-   *
-   * @param {*} event
-   */
-    function onBoardTypeChange(event: any) {
+     * Handle when a board type is selected
+     *
+     * @param {*} event
+     */
+    async function onBoardTypeChange(event: any) {
         const { key: boardTypeKey } = event;
         if (boardTypeKey !== selectedBoardType) {
             setSelectedBoardType(boardTypeKey);
 
-            jira.getBoards({ type: boardTypeKey })
-                .then((boards: Board[]) => {
-                    boards.sort((a, b) => a.name > b.name ? 1 : -1);
-                    setBoardOptions(boards);
-                    setSelectedBoardId(-1);
-                    setSprintOptions([]);
-                    setSelectedSprintId(-1);
-                });
+            const boards: Board[] = await jiraQuery.getBoards({ type: boardTypeKey });
+            boards.sort((a, b) => a.name > b.name ? 1 : -1);
+            setBoardOptions(boards);
+            setSelectedBoardId(-1);
+            setSprintOptions([]);
+            setSelectedSprintIds([]);
         }
     }
 
@@ -39,17 +45,15 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, singleSelect =
      *
      * @param {number} value board id
      */
-    function onBoardOptionChange(value: number) {
+    async function onBoardChange(value: number) {
         const boardId = value;
         if (boardId !== selectedBoardId) {
             setSelectedBoardId(boardId);
 
-            jira.getSprintsByBoardId(boardId)
-                .then((sprints: Sprint[]) => {
-                    sprints.sort((a, b) => a.startDate < b.endDate ? 1 : -1);
-                    setSprintOptions(sprints);
-                    setSelectedSprintId(-1);
-                });
+            const sprints: Sprint[] = await jiraQuery.getSprintsByBoardId(boardId);
+            sprints.sort((a, b) => a.startDate < b.endDate ? 1 : -1);
+            setSprintOptions(sprints);
+            setSelectedSprintIds([]);
         }
     }
 
@@ -58,25 +62,30 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, singleSelect =
      *
      * @param {*} event
      */
-    function onSingleSprintOptionChange(event: any) {
+    function onSingleSprintChange(event: any) {
         const sprintId = +event.key;
-        if (sprintId !== selectedSprintId) {
-            setSelectedSprintId(sprintId);
-            onSprintSelect(sprintId);
+        if (sprintId !== selectedSprintIds[0]) {
+            setSelectedSprintIds([sprintId]);
         }
     }
 
-    function onMultiSprintChange(value: number) {
-        console.log(value);
+    /**
+     * Handle when sprint selection is changed.
+     *
+     * @param {number[]} values
+     */
+    function onMultiSprintChange(values: number[]) {
+        setSelectedSprintIds(values);
     }
 
-    const boardTypes = Object.entries(BoardTypeEnum).map(entry => ({ key: entry[0], label: UpperCaseFirstChar(entry[1]) }));
-    const [boardOptions, setBoardOptions] = useState<Board[]>([]);
-    const [sprintOptions, setSprintOptions] = useState<Sprint[]>([]);
-
-    const [selectedBoardType, setSelectedBoardType] = useState<string>();
-    const [selectedBoardId, setSelectedBoardId] = useState<number>();
-    const [selectedSprintId, setSelectedSprintId] = useState<number>();
+    /**
+     * Handle when apply button is clicked
+     *
+     */
+    function onApplyClick() {
+        const selectedSprints = sprintOptions.filter((s: Sprint) => selectedSprintIds.includes(s.id));
+        onSprintSelect(selectedSprints);
+    }
 
     return (
         <Space direction='vertical'>
@@ -92,18 +101,18 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, singleSelect =
                     placeholder="Select a board"
                     optionFilterProp="label"
                     style={{ width: 150 }}
-                    onChange={onBoardOptionChange}
+                    onChange={onBoardChange}
                     options={boardOptions.map(b => ({ value: b.id, label: b.name }))}
                 />
                 {
-                    singleSelect && <Dropdown
-                        menu={{ items: sprintOptions.map(s => ({ key: s.id, label: s.name })), onClick: onSingleSprintOptionChange }}
+                    !enableMultiple && <Dropdown
+                        menu={{ items: sprintOptions.map(s => ({ key: s.id, label: s.name })), onClick: onSingleSprintChange }}
                         placement='bottom'
                     >
-                        <Button>{selectedSprintId && sprintOptions.find(s => s.id === selectedSprintId)?.name || 'Select a sprint...'}</Button>
+                        <Button>{selectedSprintIds[0] && sprintOptions.find(s => s.id === selectedSprintIds[0])?.name || 'Select a sprint...'}</Button>
                     </Dropdown>}
                 {
-                    !singleSelect && <Select
+                    enableMultiple && <Select
                         showSearch
                         mode="multiple"
                         placeholder="Select sprints..."
@@ -113,6 +122,7 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, singleSelect =
                         options={sprintOptions.map(s => ({ value: s.id, label: s.name }))}
                     />
                 }
+                <Button color='primary' variant='solid' onClick={onApplyClick}>Apply</Button>
             </Space>
         </Space>
     );
