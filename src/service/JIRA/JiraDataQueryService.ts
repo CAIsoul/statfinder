@@ -1,6 +1,6 @@
 import { AxiosInstance, AxiosResponse } from 'axios';
 import config from '../../../config';
-import { Board, Issue, Sprint } from '../../models/JiraData';
+import { Board, Issue, Sprint, SprintReport } from '../../models/JiraData';
 import { getAxiosInstance, setupInterceptors } from '../AxiosService';
 
 const { baseApiUrl } = config;
@@ -84,6 +84,25 @@ class JiraDataQueryService {
 
         } catch (error) {
             console.log("Error fetching issues:", error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get sprint report data.
+     *
+     * @param {number} sprintId
+     * @return {*}  {Promise<any>}
+     * @memberof JiraDataQueryService
+     */
+    async getSprintReport(boardId: number, sprintId: number): Promise<SprintReport> {
+        try {
+            const params = { boardId, sprintId };
+            const response: AxiosResponse<any> = await this._axios.get('/get-sprint-report', { params });
+
+            return response.data;
+        } catch (error) {
+            console.log("Error fetching sprint report:", error);
             throw error;
         }
     }

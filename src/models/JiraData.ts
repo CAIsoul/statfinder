@@ -72,6 +72,34 @@ export interface Sprint {
     newFeatureTesting?: number;
 }
 
+export interface SprintReport {
+    contents: SprintReportContents;
+    sprint: Sprint;
+    supportsPages: boolean;
+}
+
+interface SprintReportContents {
+    allIssuesEstimateSum: ContentItem;
+    completedIssues: any[];
+    completedIssuesEstimateSum: ContentItem;
+    completedIssuesInitialEstimateSum: ContentItem;
+    issueKeysAddedDuringSprint: any;
+    issuesCompletedInAnotherSprint: any[];
+    issuesCompletedInAnotherSprintEstimateSum: ContentItem;
+    issuesCompletedInAnotherSprintInitialEstimateSum: ContentItem;
+    issuesNotCompletedEstimateSum: ContentItem;
+    issuesNotCompletedInCurrentSprint: any[];
+    issuesNotCompletedInitialEstimateSum: ContentItem;
+    puntedIssues: any[];
+    puntedIssuesEstimateSum: ContentItem;
+    puntedIssuesInitialEstimateSum: ContentItem;
+}
+
+interface ContentItem {
+    text: string;
+    value?: number;
+}
+
 export interface Issue {
     id: number;
     key: string;
@@ -160,3 +188,4 @@ export interface IssueRow {
     reporter?: string;
     children?: IssueRow[];
 }
+

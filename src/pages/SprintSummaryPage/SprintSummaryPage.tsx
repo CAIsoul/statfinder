@@ -26,20 +26,38 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
             key: '1',
             label: 'Start Date',
             children: dayjs(sprint?.startDate).format(dateFormat),
-            span: 2
+            span: 1
         },
         {
             key: '2',
             label: 'End Date',
             children: dayjs(sprint?.endDate).format(dateFormat),
+            span: 1
+        },
+        {
+            key: '3',
+            label: 'Complete Date',
+            children: sprint?.completeDate ? dayjs(sprint?.completeDate).format(dateFormat) : 'Not yet completed',
             span: 2
         },
         {
-            key: '2',
-            label: 'Complete Date',
-            children: sprint?.completeDate ? dayjs(sprint?.completeDate).format(dateFormat) : 'Not yet completed',
-            span: 1
-        }
+            key: '4',
+            label: 'Committed',
+            children: sprint?.originalCommitted ?? 0,
+            span: 3
+        },
+        {
+            key: '5',
+            label: 'Completed',
+            children: sprint?.originalCompleted ?? 0,
+            span: 3
+        },
+        {
+            key: '6',
+            label: 'Completence',
+            children: `${sprint?.originalCommitted ? (sprint?.originalCompleted ?? 0 / sprint?.originalCommitted).toFixed(1) : 0}%`,
+            span: 3
+        },
     ];
 
 
@@ -97,7 +115,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
 
 
         const issues: Issue[] = await jiraQuery.getIssuesBySprintId(sprint.id);
-        const sprintExt = jiraConvert.getSprintSummary(sprint, issues);
+        const sprintExt = await jiraConvert.getSprintSummary(sprint, issues);
 
         setSprint(sprintExt);
         setIssues(issues);

@@ -85,6 +85,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<WelcomePage />}></Route>
             <Route path="/sprint-summary" element={<SprintSummaryPage />}></Route>
+            <Route path="/sprint-compare" element={<div></div>} ></Route>
             <Route path="*" element={<WelcomePage />}></Route>
           </Routes>
         </Layout>

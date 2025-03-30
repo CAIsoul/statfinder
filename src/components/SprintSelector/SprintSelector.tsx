@@ -60,10 +60,10 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple
     /**
      * Handle when a sprint is selected
      *
-     * @param {*} event
+     * @param {number} value
      */
-    function onSingleSprintChange(event: any) {
-        const sprintId = +event.key;
+    function onSingleSprintChange(value: number) {
+        const sprintId = value;
         if (sprintId !== selectedSprintIds[0]) {
             setSelectedSprintIds([sprintId]);
         }
@@ -105,12 +105,15 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple
                     options={boardOptions.map(b => ({ value: b.id, label: b.name }))}
                 />
                 {
-                    !enableMultiple && <Dropdown
-                        menu={{ items: sprintOptions.map(s => ({ key: s.id, label: s.name })), onClick: onSingleSprintChange }}
-                        placement='bottom'
-                    >
-                        <Button>{selectedSprintIds[0] && sprintOptions.find(s => s.id === selectedSprintIds[0])?.name || 'Select a sprint...'}</Button>
-                    </Dropdown>}
+                    !enableMultiple && <Select
+                        showSearch
+                        placeholder="Select sprints..."
+                        optionFilterProp="label"
+                        style={{ width: 200 }}
+                        onChange={onSingleSprintChange}
+                        options={sprintOptions.map(s => ({ value: s.id, label: s.name }))}
+                    />
+                }
                 {
                     enableMultiple && <Select
                         showSearch
