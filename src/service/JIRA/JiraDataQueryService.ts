@@ -3,7 +3,7 @@ import config from '../../../config';
 import { Board, Issue, Sprint, SprintReport } from '../../models/JiraData';
 import { getAxiosInstance, setupInterceptors } from '../AxiosService';
 
-const { baseApiUrl } = config;
+const { baseApiUrl, debug } = config;
 const BASE_URL: string = baseApiUrl;
 
 class JiraDataQueryService {
@@ -22,12 +22,19 @@ class JiraDataQueryService {
         setupInterceptors(this._axios, options);
     }
 
-    async getSprintByIds(sprintId: number): Promise<any[]> {
+    /**
+     * Retrieves sprint data for a specific sprint ID.
+     * 
+     * @param {number} sprintId - The ID of the sprint to fetch data for
+     * @returns {Promise<Sprint[]>} Array containing the sprint data
+     * @throws {Error} If the request fails
+     */
+    async getSprintById(sprintId: number): Promise<Sprint> {
         try {
             const params = { sprintId };
-            const response: AxiosResponse<any> = await this._axios.get('/get-sprint-data', { params });
+            const response: AxiosResponse<Sprint[]> = await this._axios.get('/get-sprint-data', { params });
 
-            return response.data;
+            return response.data[0];
         } catch (error) {
             console.log('Error fetching sprint data: ', error);
             throw error
@@ -62,24 +69,12 @@ class JiraDataQueryService {
     async getIssuesBySprintId(sprintId: number): Promise<Issue[]> {
         try {
             const params = { sprintId };
+
+            if (debug) {
+                console.log(`Get issues by sprint id - ${sprintId}`);
+            }
+
             const response: AxiosResponse<any> = await this._axios.get('/get-sprint-issues', { params });
-
-            // const issueDict = new Map<number, Issue>();
-            // response.data.forEach((issue: Issue) => {
-            //     if(!issue.fields.parent) {
-            //         issueDict.set(issue.id, issue);
-            //     }
-            // });
-
-            // response.data.forEach((issue: Issue) => {
-            //     if(issue.fields.parent) {
-            //         const parentIssue = issueDict.get(issue.fields.parent.id);
-            //         if(parentIssue){
-            //             parentIssue.fields.subtasks.
-            //         }
-            //     }
-            // });
-
             return response.data;
 
         } catch (error) {
@@ -98,6 +93,11 @@ class JiraDataQueryService {
     async getSprintReport(boardId: number, sprintId: number): Promise<SprintReport> {
         try {
             const params = { boardId, sprintId };
+
+            if (debug) {
+                console.log(`Get sprint report by sprint id - ${sprintId}`);
+            }
+
             const response: AxiosResponse<any> = await this._axios.get('/get-sprint-report', { params });
 
             return response.data;

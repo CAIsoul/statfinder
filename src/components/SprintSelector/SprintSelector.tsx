@@ -3,23 +3,34 @@ import { Select, Dropdown, Button, Space } from 'antd';
 
 import './SprintSelector.scss';
 
-import { Board, BoardTypeEnum, Sprint } from '../../models/JiraData';
+import { Board, BoardTypeEnum, Sprint, SprintStateEnum } from '../../models/JiraData';
 import { jiraQuery } from '../../service/JIRA/JiraDataQueryService';
 import { UpperCaseFirstChar } from '../../service/StringFormatService';
+import config from '../../../config';
 
 interface SelectorProp {
     onSprintSelect: any,
     enableMultiple: boolean,
 };
 
+const mockSelection = {
+    type: BoardTypeEnum.SCRUM,
+    boardId: 99,
+    sprintId: 2468
+}
+
+const DEFAULT_BOARDTYPE = config.debug ? mockSelection.type : BoardTypeEnum.SCRUM;
+const DEFAULT_BOARDID = config.debug ? mockSelection.boardId : 0;
+const DEFAULT_SPRINTIDS = config.debug ? [mockSelection.sprintId] : [];
+
 const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple = false }) => {
     const boardTypes = Object.entries(BoardTypeEnum).map(entry => ({ key: entry[0], label: UpperCaseFirstChar(entry[1]) }));
     const [boardOptions, setBoardOptions] = useState<Board[]>([]);
     const [sprintOptions, setSprintOptions] = useState<Sprint[]>([]);
 
-    const [selectedBoardType, setSelectedBoardType] = useState<string>();
-    const [selectedBoardId, setSelectedBoardId] = useState<number>();
-    const [selectedSprintIds, setSelectedSprintIds] = useState<number[]>([]);
+    const [selectedBoardType, setSelectedBoardType] = useState<string>(DEFAULT_BOARDTYPE);
+    const [selectedBoardId, setSelectedBoardId] = useState<number>(DEFAULT_BOARDID);
+    const [selectedSprintIds, setSelectedSprintIds] = useState<number[]>(DEFAULT_SPRINTIDS);
 
     /**
      * Handle when a board type is selected
@@ -51,7 +62,7 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple
             setSelectedBoardId(boardId);
 
             const sprints: Sprint[] = await jiraQuery.getSprintsByBoardId(boardId);
-            sprints.sort((a, b) => a.startDate < b.endDate ? 1 : -1);
+            sprints.sort((a, b) => a.startDate < b.startDate ? 1 : -1);
             setSprintOptions(sprints);
             setSelectedSprintIds([]);
         }
@@ -83,7 +94,21 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple
      *
      */
     function onApplyClick() {
-        const selectedSprints = sprintOptions.filter((s: Sprint) => selectedSprintIds.includes(s.id));
+        let selectedSprints = sprintOptions.filter((s: Sprint) => selectedSprintIds.includes(s.id));
+
+        // if (config.debug) {
+        //     selectedSprints = [{
+        //         id: DEFAULT_SPRINTIDS[0],
+        //         originBoardId: DEFAULT_BOARDID,
+        //         name: 'Mock Sprint',
+        //         goal: '',
+        //         state: SprintStateEnum.ACTIVE,
+        //         startDate: new Date().toISOString(),
+        //         endDate: new Date().toISOString(),
+        //         completeDate: new Date().toISOString(),
+        //     }];
+        // }
+
         onSprintSelect(selectedSprints);
     }
 

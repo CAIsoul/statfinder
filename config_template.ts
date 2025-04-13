@@ -1,7 +1,7 @@
 const config: any = {
     development: {
         debug: true,
-        baseApiUrl: "",
+        baseApiUrl: "/api",
     },
     production: {
         debug: false,

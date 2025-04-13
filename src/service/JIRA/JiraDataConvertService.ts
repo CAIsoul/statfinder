@@ -1,5 +1,17 @@
-import { Issue, IssueRow, Sprint, SprintReport } from "../../models/JiraData";
+import { Issue, IssueRow, IssueStatusEnum, IssueTypeEnum, Sprint, SprintReport, Worklog } from "../../models/JiraData";
 import { jiraQuery } from "./JiraDataQueryService";
+
+const PRIMARY_ISSUE_TYPES = [
+    IssueTypeEnum.STORY,
+    IssueTypeEnum.BUG,
+    IssueTypeEnum.CHANGE_REQUEST,
+];
+
+const COMPLETE_STATES = [
+    IssueStatusEnum.CLOSED,
+    IssueStatusEnum.DONE,
+    IssueStatusEnum.FIXED,
+];
 
 class JiraDataConvertService {
     ConvertToIssueRow(issue: Issue): IssueRow {
@@ -41,39 +53,105 @@ class JiraDataConvertService {
             puntedIssuesEstimateSum, puntedIssuesInitialEstimateSum
         } = sprintReport.contents;
 
-        sprint.originalCompleted = completedIssuesEstimateSum.value ?? 0;
-        sprint.originalNotCompleted = issuesNotCompletedEstimateSum.value ?? 0;
-        sprint.originalCommitted = sprint.originalCompleted + sprint.originalNotCompleted;
+        const primaryIssueDict = new Map<string, Issue>();
 
-        sprint.originalCompleted = 0;
-        sprint.originalNotCompleted = 0;
-        sprint.newlyCompleted = 0;
-        sprint.newlyNotCompleted = 0;
-
-        completedIssues.forEach((issue: any) => {
-            const storyPoint = issue.estimateStatistic.statFieldValue.value ?? 0;
-            if (issueKeysAddedDuringSprint[issue.key]) {
-                sprint.newlyCompleted += storyPoint;
-            } else {
-                sprint.originalCompleted += storyPoint;
+        // Iterate through all primary issues first
+        issues.forEach(issue => {
+            if (PRIMARY_ISSUE_TYPES.includes(issue.fields.issuetype.name)) {
+                primaryIssueDict.set(issue.key, issue);
             }
         });
 
-        issuesNotCompletedInCurrentSprint.forEach((issue: any) => {
-            const storyPoint = issue.estimateStatistic.statFieldValue.value ?? 0;
-            if (issueKeysAddedDuringSprint[issue.key]) {
-                sprint.newlyNotCompleted += storyPoint;
+        // Iterate through non-primary issues
+        issues.forEach(issue => {
+            const parent = issue.fields.parent?.key && primaryIssueDict.get(issue.fields.parent.key);
+            if (!parent) {
+                return;
+            }
+
+            const match = parent.fields.subtasks.find(t => t.id === issue.id);
+            if (match) {
+                Object.assign(match, issue)
             } else {
-                sprint.originalNotCompleted += storyPoint;
+                parent.fields.subtasks.push(issue);
             }
         });
 
+        let originalCompleted = 0;
+        let originalNotCompleted = 0;
+        let originalRemoved = 0;
+        let newlyCompleted = 0;
+        let newlyNotCompleted = 0;
 
-        sprint.totalCommitted = allIssuesEstimateSum.value;
-        sprint.originalCommitted = sprint.originalCompleted + sprint.originalNotCompleted;
-        sprint.newlyAdded = sprint.newlyCompleted + sprint.newlyNotCompleted;
+        for (var [_, issue] of primaryIssueDict.entries()) {
+            const {
+                status,
+                customfield_10026: storyPoint = 0
+            } = issue.fields;
+
+            // 
+            if (issueKeysAddedDuringSprint[issue.key]) {
+                if (COMPLETE_STATES.includes(status.name)) {
+                    newlyCompleted += storyPoint;
+                } else {
+                    newlyNotCompleted += storyPoint;
+                }
+            } else if (puntedIssues.findIndex(i => i.id === issue.id) > -1) {
+                originalRemoved += storyPoint;
+            } else {
+                if (COMPLETE_STATES.includes(status.name)) {
+                    originalCompleted += storyPoint;
+                } else {
+                    originalNotCompleted += storyPoint;
+                }
+            }
+
+            //
+        }
+
+        sprint.originalCompleted = originalCompleted;
+        sprint.originalNotCompleted = originalNotCompleted;
+        sprint.originalCommitted = originalCompleted + originalNotCompleted;
+        sprint.newlyCompleted = newlyCompleted;
+        sprint.newlyNotCompleted = newlyNotCompleted;
+        sprint.newlyAdded = newlyCompleted + newlyNotCompleted;
+        sprint.totalCommitted = sprint.originalCommitted + sprint.newlyAdded;
+        sprint.totalCompleted = sprint.originalCompleted + sprint.newlyCompleted;
 
         return sprint;
+    }
+
+    private calculateIssueWorkLogs(issue: Issue) {
+        // Initialize worklog map for this issue
+        const worklogsByPerson: { [key: string]: number } = {};
+
+        // Helper function to add worklogs to the map
+        const addWorklogs = (logs: Worklog[]) => {
+            if (!logs) return;
+            
+            logs.forEach(log => {
+                const author = log.author.displayName;
+                const timeSpentSeconds = log.timeSpendSeconds || 0;
+                worklogsByPerson[author] = (worklogsByPerson[author] || 0) + timeSpentSeconds;
+            });
+        };
+
+        // Add worklogs from the main issue
+        addWorklogs(issue.fields.worklog?.worklogs || []);
+
+        // Add worklogs from subtasks
+        if (issue.fields.subtasks) {
+            issue.fields.subtasks.forEach(subtask => {
+                addWorklogs(subtask.fields.worklog?.worklogs || []);
+            });
+        }
+
+        // Convert seconds to hours and round to 1 decimal place
+        Object.keys(worklogsByPerson).forEach(person => {
+            worklogsByPerson[person] = Math.round(worklogsByPerson[person] / 3600 * 10) / 10;
+        });
+
+        return worklogsByPerson;
     }
 }
 

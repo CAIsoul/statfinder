@@ -6,6 +6,8 @@ export enum BoardTypeEnum {
 
 export enum SprintStateEnum {
     CLOSED = 'closed',
+    ACTIVE = 'active',
+    FUTURE= 'Future',
 }
 
 export enum IssueTypeEnum {
@@ -14,15 +16,28 @@ export enum IssueTypeEnum {
     SPRINT_TASK = 'Sprint Task',
     SPRINT_BUG = 'Sprint Bug',
     SUB_TEST_EXECUTION = 'Sub Test Execution',
-    TEST_PLAN = 'Test Plan'
+    TEST_PLAN = 'Test Plan',
+    CHANGE_REQUEST = 'Change Request'
 }
 
 export enum IssueStatusEnum {
-
+    IN_PROGRESS = 'In Progress',
+    DONE = 'Done',
+    IN_REVIEW = 'In Review',
+    ACCEPTANCE = 'Acceptance',
+    FINAL_REVIEW = 'Final Review',
+    CLOSED = 'Closed',
+    FIXED = 'Fixed',
+    IN_BACKLOG = 'In Backlog',
+    VERIFICATION = 'Verification',
+    UNKNOWN = 'Unknown',
 }
 
 export enum IssuePriorityEnum {
-
+    HIGHEST = 'Highest',
+    URGENT = 'Urgent',
+    HIGH = 'High',
+    MEDIUM = 'Medium',
 }
 
 export interface Board {
@@ -105,6 +120,10 @@ export interface Issue {
     key: string;
     self: string;
     fields: IssueExtension;
+
+    isRemoved?: boolean;
+    isNewlyAdded?: boolean;
+    isRollOvered?: boolean;
 }
 
 export interface IssueExtension {
@@ -123,6 +142,9 @@ export interface IssueExtension {
     worklog?: { worklogs: Worklog[] }
     parent?: Issue;
     subtasks: Issue[];
+
+    // Story point
+    customfield_10026?: number;
 }
 
 export interface IssueType {

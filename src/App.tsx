@@ -11,6 +11,7 @@ import { NavItem } from './models/NavItem';
 import WelcomePage from './pages/WelcomePage/WelcomePage';
 import { useLoading } from './components/LoadingIndicator/LoadingContext';
 import { jiraQuery } from './service/JIRA/JiraDataQueryService';
+import SprintComparePage from './pages/SprintComparePage/SprintComparePage';
 
 const navItems: NavItem[] = [
   {
@@ -27,6 +28,11 @@ const navItems: NavItem[] = [
             Name: 'summary',
             Label: 'Summary',
             Route: 'sprint-summary',
+          },
+          {
+            Name: 'Compare',
+            Label: 'Compare',
+            Route: 'sprint-compare',
           }
         ],
       },
@@ -85,7 +91,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<WelcomePage />}></Route>
             <Route path="/sprint-summary" element={<SprintSummaryPage />}></Route>
-            <Route path="/sprint-compare" element={<div></div>} ></Route>
+            <Route path="/sprint-compare" element={<SprintComparePage />} ></Route>
             <Route path="*" element={<WelcomePage />}></Route>
           </Routes>
         </Layout>
