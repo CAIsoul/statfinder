@@ -18,9 +18,10 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
     const dateFormat = "YYYY-MM-DD";
     const displayIssueColumns = [
         { title: 'Issue', dataIndex: 'key', key: 'key', width: 150 },
-        { title: 'Type', dataIndex: 'issuetype', key: 'type', width: 200},
+        { title: 'Type', dataIndex: 'issuetype', key: 'type', width: 120 },
         { title: 'Title', dataIndex: 'summary', key: 'summary' },
         { title: 'Status', dataIndex: 'status', key: 'status', width: 200, render: (text: string) => renderIssusState(text as IssueStatusEnum) },
+        { title: 'Story Point', dataIndex: 'storyPoint', key: 'storyPoint', width: 120 },
     ];
 
     const descpItems: DescriptionsProps['items'] = [
@@ -32,7 +33,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         },
         {
             key: '2',
-            label: 'End Date', 
+            label: 'End Date',
             children: dayjs(sprint?.endDate).format(dateFormat),
             span: 2
         },
@@ -49,7 +50,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
             span: 2
         },
         {
-            key: '5', 
+            key: '5',
             label: 'Sprint Goal',
             children: sprint?.goal ?? 'No goal set',
             span: 3
@@ -170,7 +171,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         );
     }
 
-    function formatIssueDataSource(issues: Issue[]): any {
+    function formatIssueDataSource(issues: Issue[]): IssueRow[] {
         const datasource = issues
             .filter((issue: Issue) => [IssueTypeEnum.STORY, IssueTypeEnum.BUG].includes(issue.fields.issuetype.name))
             .map((issue: Issue) => jiraConvert.ConvertToIssueRow(issue));
@@ -185,7 +186,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         }
 
         const issues: Issue[] = await jiraQuery.getIssuesBySprintId(sprint.id);
-        const sprintExt = await jiraConvert.getSprintSummary(sprint, issues);
+        const sprintExt = await jiraConvert.getSprintSummary(sprint);
 
         setSprint(sprintExt);
         setIssues(issues);

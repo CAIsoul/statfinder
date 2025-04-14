@@ -24,6 +24,7 @@ class JiraDataConvertService {
             issuetype: issue.fields.issuetype?.name,
             status: issue.fields.status?.name,
             priority: issue.fields.priority?.name,
+            storyPoint: issue.fields.customfield_10026 ?? 0,
 
             description: issue.fields.description,
             updated: issue.fields.updated,
@@ -42,7 +43,7 @@ class JiraDataConvertService {
      * @return {*}  {Sprint}
      * @memberof JiraDataConvertService
      */
-    async getSprintSummary(sprint: Sprint, issues: Issue[]): Promise<Sprint> {
+    async getSprintSummary(sprint: Sprint): Promise<Sprint> {
         // TBD: analyse sprint stat
         const sprintReport = await jiraQuery.getSprintReport(sprint.originBoardId, sprint.id);
         const { allIssuesEstimateSum, completedIssues, issuesNotCompletedInCurrentSprint, puntedIssues,
@@ -53,61 +54,61 @@ class JiraDataConvertService {
             puntedIssuesEstimateSum, puntedIssuesInitialEstimateSum
         } = sprintReport.contents;
 
-        const primaryIssueDict = new Map<string, Issue>();
+        // const primaryIssueDict = new Map<string, Issue>();
 
-        // Iterate through all primary issues first
-        issues.forEach(issue => {
-            if (PRIMARY_ISSUE_TYPES.includes(issue.fields.issuetype.name)) {
-                primaryIssueDict.set(issue.key, issue);
-            }
-        });
+        // // Iterate through all primary issues first
+        // issues.forEach(issue => {
+        //     if (PRIMARY_ISSUE_TYPES.includes(issue.fields.issuetype.name)) {
+        //         primaryIssueDict.set(issue.key, issue);
+        //     }
+        // });
 
-        // Iterate through non-primary issues
-        issues.forEach(issue => {
-            const parent = issue.fields.parent?.key && primaryIssueDict.get(issue.fields.parent.key);
-            if (!parent) {
-                return;
-            }
+        // // Iterate through non-primary issues
+        // issues.forEach(issue => {
+        //     const parent = issue.fields.parent?.key && primaryIssueDict.get(issue.fields.parent.key);
+        //     if (!parent) {
+        //         return;
+        //     }
 
-            const match = parent.fields.subtasks.find(t => t.id === issue.id);
-            if (match) {
-                Object.assign(match, issue)
-            } else {
-                parent.fields.subtasks.push(issue);
-            }
-        });
+        //     const match = parent.fields.subtasks.find(t => t.id === issue.id);
+        //     if (match) {
+        //         Object.assign(match, issue)
+        //     } else {
+        //         parent.fields.subtasks.push(issue);
+        //     }
+        // });
 
+        let totalCommitted = 0;
         let originalCompleted = 0;
         let originalNotCompleted = 0;
         let originalRemoved = 0;
         let newlyCompleted = 0;
         let newlyNotCompleted = 0;
 
-        for (var [_, issue] of primaryIssueDict.entries()) {
-            const {
-                status,
-                customfield_10026: storyPoint = 0
-            } = issue.fields;
-
-            // 
+        completedIssues.forEach(issue => {
+            const point = issue.estimateStatistic.statFieldValue.value ?? 0;
             if (issueKeysAddedDuringSprint[issue.key]) {
-                if (COMPLETE_STATES.includes(status.name)) {
-                    newlyCompleted += storyPoint;
-                } else {
-                    newlyNotCompleted += storyPoint;
-                }
-            } else if (puntedIssues.findIndex(i => i.id === issue.id) > -1) {
-                originalRemoved += storyPoint;
+                newlyCompleted += point;
             } else {
-                if (COMPLETE_STATES.includes(status.name)) {
-                    originalCompleted += storyPoint;
-                } else {
-                    originalNotCompleted += storyPoint;
-                }
+                originalCompleted += point;
             }
+        });
 
-            //
-        }
+        issuesNotCompletedInCurrentSprint.forEach(issue => {
+            const point = issue.estimateStatistic.statFieldValue.value ?? 0;
+            if (issueKeysAddedDuringSprint[issue.key]) {
+                newlyNotCompleted += point;
+            } else {
+                originalNotCompleted += point;
+            }
+        });
+
+        puntedIssues.forEach(issue => {
+            const point = issue.estimateStatistic.statFieldValue.value ?? 0;
+            if (!issueKeysAddedDuringSprint[issue.key]) {
+                totalCommitted += point;
+            }
+        });
 
         sprint.originalCompleted = originalCompleted;
         sprint.originalNotCompleted = originalNotCompleted;
@@ -115,8 +116,8 @@ class JiraDataConvertService {
         sprint.newlyCompleted = newlyCompleted;
         sprint.newlyNotCompleted = newlyNotCompleted;
         sprint.newlyAdded = newlyCompleted + newlyNotCompleted;
-        sprint.totalCommitted = sprint.originalCommitted + sprint.newlyAdded;
-        sprint.totalCompleted = sprint.originalCompleted + sprint.newlyCompleted;
+        sprint.totalCommitted = totalCommitted + originalCompleted + originalNotCompleted;
+        sprint.totalCompleted = originalCompleted + newlyCompleted;
 
         return sprint;
     }
@@ -128,7 +129,7 @@ class JiraDataConvertService {
         // Helper function to add worklogs to the map
         const addWorklogs = (logs: Worklog[]) => {
             if (!logs) return;
-            
+
             logs.forEach(log => {
                 const author = log.author.displayName;
                 const timeSpentSeconds = log.timeSpendSeconds || 0;

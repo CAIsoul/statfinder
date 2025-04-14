@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Empty } from 'antd';
+import { Empty, Dropdown, MenuProps, Space } from 'antd';
+import { DownOutlined } from '@ant-design/icons';
 
 import './SprintComparePage.scss';
 import SprintSelector from '../../components/SprintSelector/SprintSelector';
 import { Sprint } from '../../models/JiraData';
-import { jiraQuery } from '../../service/JIRA/JiraDataQueryService';
+import { jiraConvert } from '../../service/JIRA/JiraDataConvertService';
 const SprintComparePage: React.FC = () => {
 
     const [sprints, setSprints] = useState<Sprint[]>([]);
+    const [eChartType, setEChartType] = useState<string>('1');
 
-    function getEChartOptions() {
+    const eChartSelections: MenuProps['items'] = [
+        {
+            key: '1',
+            label: 'Sprint Completion',
+        },
+        {
+            key: '2',
+            label: 'Sprint Effort Contributions',
+        }
+    ];
+
+    function getEChartSprintCompletionOptions() {
         const sprintNames: string[] = [];
         const sprintUncompleted: number[] = [];
         const sprintCompleted: number[] = [];
@@ -35,7 +48,7 @@ const SprintComparePage: React.FC = () => {
             },
             tooltip: {},
             legend: {
-                data: ['Completed', 'Uncompleted'],
+                data: ['Uncompleted', 'Completed'],
             },
             xAxis: {
                 type: 'category',
@@ -48,15 +61,15 @@ const SprintComparePage: React.FC = () => {
             },
             series: [
                 {
-                    name: 'Uncompleted',
-                    type: 'bar',
-                    data: sprintUncompleted,
-                    stack: 'x',
-                },
-                {
                     name: 'Completed',
                     type: 'bar',
                     data: sprintCompleted,
+                    stack: 'x',
+                },
+                {
+                    name: 'Uncompleted',
+                    type: 'bar',
+                    data: sprintUncompleted,
                     stack: 'x',
                 },
                 {
@@ -68,21 +81,33 @@ const SprintComparePage: React.FC = () => {
         };
     }
 
+    function getEChartSprintEffortContributionsOptions() {
+        return {};
+    }
+
+    function getEChartOptions(eChartKey: string) {
+        let eChartOptions = null;
+
+        if (eChartKey === '1') {
+            eChartOptions = getEChartSprintCompletionOptions();
+        } else if (eChartKey === '2') {
+            eChartOptions = getEChartSprintCompletionOptions();
+        }
+
+        return eChartOptions;
+    }
+
     async function handleSprintSelect(sprints: Sprint[]) {
-        const requestTasks = sprints.map((sprint) => {
-            const { originBoardId, id } = sprint;
-            return jiraQuery.getSprintReport(originBoardId, id)
-                .then((sprintReport) => {
-
-                    sprint.totalCompleted = sprintReport.contents.completedIssuesInitialEstimateSum.value ?? 0;
-                    sprint.totalCommitted = sprintReport.contents.allIssuesEstimateSum.value ?? 0;
-                });
+        const requestTasks = sprints.map((sprint) => jiraConvert.getSprintSummary(sprint));
+        Promise.all(requestTasks).then((sprintSummaries) => {
+            sprintSummaries.sort((a, b) => a.startDate > b.startDate ? 1 : -1);
+            setSprints(sprintSummaries);
         });
+    }
 
-        Promise.all(requestTasks).then(() => {
-            sprints.sort((a, b) => a.startDate > b.startDate ? 1 : -1);
-            setSprints(sprints);
-        });
+    function handleEChartSelectionChange(event: any) {
+        const { key: eChartKey } = event;
+        setEChartType(eChartKey);
     }
 
     return (
@@ -91,10 +116,24 @@ const SprintComparePage: React.FC = () => {
             <div className='chart-container'>
                 {
                     sprints.length > 0 ? (
-                        <ReactECharts
-                            option={getEChartOptions()}
-                            style={{ height: '500px', width: '800px' }}
-                        />
+                        <>
+                            <div className='chart-controls'>
+                                <Dropdown menu={{ items: eChartSelections, onClick: handleEChartSelectionChange }}>
+                                    <a onClick={(e) => e.preventDefault()}>
+                                        <Space>
+                                            Select Chart Type
+                                            <DownOutlined />
+                                        </Space>
+                                    </a>
+                                </Dropdown>
+                            </div>
+                            {
+                                eChartType && <ReactECharts
+                                    option={getEChartOptions(eChartType)}
+                                    style={{ height: '500px', width: '800px' }}
+                                />
+                            }
+                        </>
                     ) : (
                         <Empty />
                     )

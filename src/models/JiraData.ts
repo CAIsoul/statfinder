@@ -7,7 +7,7 @@ export enum BoardTypeEnum {
 export enum SprintStateEnum {
     CLOSED = 'closed',
     ACTIVE = 'active',
-    FUTURE= 'Future',
+    FUTURE = 'Future',
 }
 
 export enum IssueTypeEnum {
@@ -202,6 +202,7 @@ export interface IssueRow {
     issuetype: IssueTypeEnum;
     status: IssueStatusEnum;
     priority: IssuePriorityEnum;
+    storyPoint: number;
 
     description?: string;
     updated?: string;
