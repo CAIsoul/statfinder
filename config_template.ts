@@ -2,10 +2,14 @@ const config: any = {
     development: {
         debug: true,
         baseApiUrl: "/api",
+        jiraBaseUrl: "",
+        teamMembers: {},
     },
     production: {
         debug: false,
         baseApiUrl: "",
+        jiraBaseUrl: "",
+        teamMembers: {},
     }
 }
 

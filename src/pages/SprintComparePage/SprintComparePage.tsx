@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Empty, Dropdown, MenuProps, Space } from 'antd';
+import { Empty, Dropdown, Space } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 
 import './SprintComparePage.scss';
 import SprintSelector from '../../components/SprintSelector/SprintSelector';
 import { Sprint } from '../../models/JiraData';
 import { jiraConvert } from '../../service/JIRA/JiraDataConvertService';
+
 const SprintComparePage: React.FC = () => {
 
     const [sprints, setSprints] = useState<Sprint[]>([]);
     const [eChartType, setEChartType] = useState<string>('1');
 
-    const eChartSelections: MenuProps['items'] = [
+    const eChartSelections: any[] = [
         {
             key: '1',
             label: 'Sprint Completion',
@@ -54,35 +55,40 @@ const SprintComparePage: React.FC = () => {
                 type: 'category',
                 data: sprintNames,
             },
-            yAxis: {
+            yAxis: [{
                 type: 'value',
                 min: 0,
-                max: maxPoint,
-            },
+                max: Math.ceil(maxPoint / 10) * 10,
+            }, {
+                type: 'value',
+                min: 0,
+                max: 1.2,
+                interval: 0.1,
+            }],
             series: [
                 {
                     name: 'Completed',
                     type: 'bar',
+                    yAxisIndex: 0,
                     data: sprintCompleted,
                     stack: 'x',
                 },
                 {
                     name: 'Uncompleted',
                     type: 'bar',
+                    yAxisIndex: 0,
                     data: sprintUncompleted,
                     stack: 'x',
                 },
                 {
                     name: 'Completion',
                     type: 'line',
+                    smooth: true,
+                    yAxisIndex: 1,
                     data: srpintCompletion,
                 }
             ],
         };
-    }
-
-    function getEChartSprintEffortContributionsOptions() {
-        return {};
     }
 
     function getEChartOptions(eChartKey: string) {
@@ -121,7 +127,7 @@ const SprintComparePage: React.FC = () => {
                                 <Dropdown menu={{ items: eChartSelections, onClick: handleEChartSelectionChange }}>
                                     <a onClick={(e) => e.preventDefault()}>
                                         <Space>
-                                            Select Chart Type
+                                            {(eChartSelections.find((e: any) => e?.key === eChartType))?.label || "Select Chart Type"}
                                             <DownOutlined />
                                         </Space>
                                     </a>

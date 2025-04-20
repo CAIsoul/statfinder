@@ -1,4 +1,5 @@
-import { Issue, IssueRow, IssueStatusEnum, IssueTypeEnum, Sprint, SprintReport, Worklog } from "../../models/JiraData";
+import config from "../../../config";
+import { Contribution, Issue, IssueStatusEnum, IssueTypeEnum, RoleEnum, Sprint, TeamMember } from "../../models/JiraData";
 import { jiraQuery } from "./JiraDataQueryService";
 
 const PRIMARY_ISSUE_TYPES = [
@@ -13,26 +14,13 @@ const COMPLETE_STATES = [
     IssueStatusEnum.FIXED,
 ];
 
+const TEAM_MEMBERS: TeamMember[] = config.teamMembers['TFSH3'];
+
 class JiraDataConvertService {
-    ConvertToIssueRow(issue: Issue): IssueRow {
-        return {
-            id: issue.id,
-            key: issue.key,
-            url: issue.self,
-
-            summary: issue.fields.summary,
-            issuetype: issue.fields.issuetype?.name,
-            status: issue.fields.status?.name,
-            priority: issue.fields.priority?.name,
-            storyPoint: issue.fields.customfield_10026 ?? 0,
-
-            description: issue.fields.description,
-            updated: issue.fields.updated,
-            duedate: issue.fields.duedate,
-            resolutiondate: issue.fields.resolutiondate,
-            reporter: issue.fields.reporter?.displayName,
-            children: issue.fields.subtasks?.length > 0 ? issue.fields.subtasks.map(s => this.ConvertToIssueRow(s)) : undefined,
-        }
+    formatIssue(issue: Issue): Issue {
+        issue.storyPoint = issue.fields.customfield_10026 ?? 0;
+        issue.isCompleted = COMPLETE_STATES.includes(issue.fields.status.name);
+        return issue;
     }
 
     /**
@@ -46,42 +34,11 @@ class JiraDataConvertService {
     async getSprintSummary(sprint: Sprint): Promise<Sprint> {
         // TBD: analyse sprint stat
         const sprintReport = await jiraQuery.getSprintReport(sprint.originBoardId, sprint.id);
-        const { allIssuesEstimateSum, completedIssues, issuesNotCompletedInCurrentSprint, puntedIssues,
-            issuesCompletedInAnotherSprint, issueKeysAddedDuringSprint,
-            completedIssuesEstimateSum, completedIssuesInitialEstimateSum,
-            issuesCompletedInAnotherSprintEstimateSum, issuesCompletedInAnotherSprintInitialEstimateSum,
-            issuesNotCompletedEstimateSum, issuesNotCompletedInitialEstimateSum,
-            puntedIssuesEstimateSum, puntedIssuesInitialEstimateSum
-        } = sprintReport.contents;
-
-        // const primaryIssueDict = new Map<string, Issue>();
-
-        // // Iterate through all primary issues first
-        // issues.forEach(issue => {
-        //     if (PRIMARY_ISSUE_TYPES.includes(issue.fields.issuetype.name)) {
-        //         primaryIssueDict.set(issue.key, issue);
-        //     }
-        // });
-
-        // // Iterate through non-primary issues
-        // issues.forEach(issue => {
-        //     const parent = issue.fields.parent?.key && primaryIssueDict.get(issue.fields.parent.key);
-        //     if (!parent) {
-        //         return;
-        //     }
-
-        //     const match = parent.fields.subtasks.find(t => t.id === issue.id);
-        //     if (match) {
-        //         Object.assign(match, issue)
-        //     } else {
-        //         parent.fields.subtasks.push(issue);
-        //     }
-        // });
+        const { completedIssues, issuesNotCompletedInCurrentSprint, puntedIssues, issueKeysAddedDuringSprint } = sprintReport.contents;
 
         let totalCommitted = 0;
         let originalCompleted = 0;
         let originalNotCompleted = 0;
-        let originalRemoved = 0;
         let newlyCompleted = 0;
         let newlyNotCompleted = 0;
 
@@ -122,37 +79,94 @@ class JiraDataConvertService {
         return sprint;
     }
 
+    analyzeSprintIssues(issues: Issue[]) {
+        const primaryIssueDict = new Map<string, Issue>();
+
+        // Iterate through all primary issues first
+        issues.forEach(issue => {
+            if (PRIMARY_ISSUE_TYPES.includes(issue.fields.issuetype.name)) {
+                primaryIssueDict.set(issue.key, issue);
+            }
+        });
+
+        // Iterate through non-primary issues
+        issues.forEach(issue => {
+            const parent = issue.fields.parent?.key && primaryIssueDict.get(issue.fields.parent.key);
+            if (!parent) {
+                return;
+            }
+
+            const match = parent.fields.subtasks.find(t => t.id === issue.id);
+            if (match) {
+                Object.assign(match, issue)
+            } else {
+                parent.fields.subtasks.push(issue);
+            }
+        });
+
+        // Calculate worklogs for each primary issue
+        for (const issue of primaryIssueDict.values()) {
+            issue.contributions = this.calculateIssueWorkLogs(issue);
+        }
+
+        return [...primaryIssueDict.values()];
+    }
+
     private calculateIssueWorkLogs(issue: Issue) {
         // Initialize worklog map for this issue
         const worklogsByPerson: { [key: string]: number } = {};
+        const memberDict = TEAM_MEMBERS.reduce((acc, cur) => acc.set(cur.name, cur), new Map<string, TeamMember>())
 
         // Helper function to add worklogs to the map
-        const addWorklogs = (logs: Worklog[]) => {
-            if (!logs) return;
+        const addWorklogs = (issue: Issue) => {
+            if (!issue) return;
 
-            logs.forEach(log => {
+            issue.fields.customfield_10042?.forEach(developer => {
+                const name = developer.displayName;
+                if (!worklogsByPerson[name] && memberDict.has(name)) {
+                    worklogsByPerson[name] = 0;
+                }
+            });
+
+            issue.fields.worklog?.worklogs.forEach(log => {
                 const author = log.author.displayName;
-                const timeSpentSeconds = log.timeSpendSeconds || 0;
+                const timeSpentSeconds = log.timeSpentSeconds || 0;
                 worklogsByPerson[author] = (worklogsByPerson[author] || 0) + timeSpentSeconds;
             });
         };
 
         // Add worklogs from the main issue
-        addWorklogs(issue.fields.worklog?.worklogs || []);
+        addWorklogs(issue);
 
         // Add worklogs from subtasks
         if (issue.fields.subtasks) {
             issue.fields.subtasks.forEach(subtask => {
-                addWorklogs(subtask.fields.worklog?.worklogs || []);
+                addWorklogs(subtask);
             });
         }
 
+        const contributions: Contribution[] = [];
+
         // Convert seconds to hours and round to 1 decimal place
-        Object.keys(worklogsByPerson).forEach(person => {
-            worklogsByPerson[person] = Math.round(worklogsByPerson[person] / 3600 * 10) / 10;
+        Object.keys(worklogsByPerson).forEach(memberName => {
+            const member = memberDict.get(memberName);
+            if (member) {
+                contributions.push({
+                    Contributor: member,
+                    TimeInSeconds: worklogsByPerson[memberName],
+                });
+            }
         });
 
-        return worklogsByPerson;
+        contributions.sort((a, b) => {
+            if (a.Contributor.role !== b.Contributor.role) {
+                return a.Contributor.role === RoleEnum.DEVELOPER ? -1 : 1;
+            }
+
+            return a.TimeInSeconds
+        });
+
+        return contributions;
     }
 }
 

@@ -40,6 +40,26 @@ export enum IssuePriorityEnum {
     MEDIUM = 'Medium',
 }
 
+export enum EFFORT_TYPE {
+    NEW_FEATURE = 'New Feature',
+    CHANGE_REQUEST = 'Change Request',
+    TESTING = 'Testing',
+    EXISTING_BUG = 'Existing Bug',
+    VERIFICATION = 'Verification',
+    CODE_REVIEW = 'Code Review',
+    CODE_REFACTOR = 'Code Refactor',
+    DEV_TEST = 'Dev Test',
+    OTHER = 'Other',
+}
+
+export enum RoleEnum {
+    DEVELOPER = 'Developer',
+    QA = 'QA',
+    SCRUM_MASTER = 'Scrum Master',
+    PRODUCT_OWNER = 'Product Owner',
+    UNKNOWN = 'Unknown',
+}
+
 export interface Board {
     id: number;
     name: string;
@@ -121,9 +141,23 @@ export interface Issue {
     self: string;
     fields: IssueExtension;
 
+    summary: string;
+    issuetype: IssueTypeEnum;
+    status: IssueStatusEnum;
+    priority: IssuePriorityEnum;
+    storyPoint: number;
+    contributions: Contribution[];
+
+    description?: string;
+    updated?: string;
+    duedate?: string;
+    resolutiondate?: string;
+    reporter?: string;
+    contributor?: string;
     isRemoved?: boolean;
     isNewlyAdded?: boolean;
     isRollOvered?: boolean;
+    isCompleted?: boolean;
 }
 
 export interface IssueExtension {
@@ -145,6 +179,9 @@ export interface IssueExtension {
 
     // Story point
     customfield_10026?: number;
+
+    // Developers
+    customfield_10042?: JiraAccount[];
 }
 
 export interface IssueType {
@@ -168,7 +205,7 @@ export interface IssuePriority {
 export interface Worklog {
     id: number;
     issueId: number;
-    timeSpendSeconds: number;
+    timeSpentSeconds: number;
     author: JiraAccount;
     created: string;
     started: string;
@@ -192,23 +229,16 @@ export interface JiraAccount {
     emailAddress: string;
 }
 
-
-export interface IssueRow {
-    id: number;
-    key: string;
-    url: string;
-
-    summary: string;
-    issuetype: IssueTypeEnum;
-    status: IssueStatusEnum;
-    priority: IssuePriorityEnum;
-    storyPoint: number;
-
-    description?: string;
-    updated?: string;
-    duedate?: string;
-    resolutiondate?: string;
-    reporter?: string;
+export interface IssueRow extends Issue {
     children?: IssueRow[];
 }
 
+export interface Contribution {
+    Contributor: TeamMember;
+    TimeInSeconds: number;
+}
+
+export interface TeamMember {
+    name: string;
+    role: RoleEnum;
+}

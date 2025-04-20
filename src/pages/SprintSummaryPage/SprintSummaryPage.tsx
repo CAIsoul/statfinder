@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { Descriptions, DescriptionsProps, Table, Tabs, TabsProps, Tag } from 'antd';
+import { Descriptions, DescriptionsProps, Tabs, TabsProps } from 'antd';
 import dayjs from 'dayjs';
+
 
 import './SprintSummaryPage.scss';
 import SprintSelector from '../../components/SprintSelector/SprintSelector';
-import { Issue, IssueRow, IssueStatusEnum, IssueTypeEnum, Sprint } from '../../models/JiraData';
+import { Issue, Sprint } from '../../models/JiraData';
 import { jiraQuery } from '../../service/JIRA/JiraDataQueryService';
 import { jiraConvert } from '../../service/JIRA/JiraDataConvertService';
-
+import TeamContributionTable from '../../components/Data/Team/TeamContributionTable';
+import SprintIssueTable from '../../components/Data/Sprint/SprintIssueTable';
+import TeamContributionChart from '../../components/Data/Team/TeamContributionChart';
 
 interface PageProp { };
 
@@ -16,13 +19,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
     const [sprint, setSprint] = useState<Sprint>();
 
     const dateFormat = "YYYY-MM-DD";
-    const displayIssueColumns = [
-        { title: 'Issue', dataIndex: 'key', key: 'key', width: 150 },
-        { title: 'Type', dataIndex: 'issuetype', key: 'type', width: 120 },
-        { title: 'Title', dataIndex: 'summary', key: 'summary' },
-        { title: 'Status', dataIndex: 'status', key: 'status', width: 200, render: (text: string) => renderIssusState(text as IssueStatusEnum) },
-        { title: 'Story Point', dataIndex: 'storyPoint', key: 'storyPoint', width: 120 },
-    ];
+
 
     const descpItems: DescriptionsProps['items'] = [
         {
@@ -91,26 +88,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
             children: sprint?.totalCompleted ?? 0,
             span: 2,
         },
-        // {
-        //     key: '12',
-        //     label: 'Total Issues',
-        //     children: issues.length,
-        //     span: 2
-        // },
-        // {
-        //     key: '13',
-        //     label: 'Issues Completed',
-        //     children: issues.filter(issue => issue.fields.status.name === 'Done').length,
-        //     span: 2
-        // },
-        // {
-        //     key: '14',
-        //     label: 'Issues In Progress',
-        //     children: issues.filter(issue => issue.fields.status.name === 'In Progress').length,
-        //     span: 2
-        // }
     ];
-
 
     const tabItems: TabsProps['items'] = [
         {
@@ -121,32 +99,28 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         {
             key: '2',
             label: 'Issues',
-            children: renderIssuesTab()
-        }
+            children: renderIssuesTab(),
+        },
+        {
+            key: '3',
+            label: 'Contribution',
+            children: renderContribution(),
+        },
     ];
 
-    function renderIssusState(issueState: IssueStatusEnum) {
-        switch (issueState) {
-            case IssueStatusEnum.DONE:
-                return <Tag color="green">Done</Tag>;
-            case IssueStatusEnum.IN_PROGRESS:
-                return <Tag color="yellow">In Progress</Tag>;
-            case IssueStatusEnum.IN_REVIEW:
-                return <Tag color="blue">In Review</Tag>;
-            case IssueStatusEnum.ACCEPTANCE:
-                return <Tag color="purple">Acceptance</Tag>;
-            case IssueStatusEnum.FINAL_REVIEW:
-                return <Tag color="lime">Final Review</Tag>;
-            case IssueStatusEnum.FIXED:
-                return <Tag color="green">Fixed</Tag>;
-            case IssueStatusEnum.CLOSED:
-                return <Tag color="orange">Closed</Tag>;
-            case IssueStatusEnum.IN_BACKLOG:
-            default:
-                return <Tag color="default">{issueState}</Tag>;
-        }
+    function renderContribution() {
+        return (
+            <>
+                {
+                    Array.isArray(issues) && issues.length > 0 &&
+                    <>
+                        <TeamContributionChart issues={issues} />
+                        <TeamContributionTable issues={issues} />
+                    </>
+                }
+            </>
+        );
     }
-
 
     function renderInfoTab() {
         if (!sprint) {
@@ -164,18 +138,8 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
 
     function renderIssuesTab() {
         return (
-            <Table<IssueRow>
-                columns={displayIssueColumns}
-                dataSource={formatIssueDataSource(issues)}
-            />
+            <SprintIssueTable issues={issues} />
         );
-    }
-
-    function formatIssueDataSource(issues: Issue[]): IssueRow[] {
-        const datasource = issues
-            .filter((issue: Issue) => [IssueTypeEnum.STORY, IssueTypeEnum.BUG].includes(issue.fields.issuetype.name))
-            .map((issue: Issue) => jiraConvert.ConvertToIssueRow(issue));
-        return datasource;
     }
 
     async function handleSprintSelect(sprints: Sprint[]) {
@@ -189,17 +153,18 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         const sprintExt = await jiraConvert.getSprintSummary(sprint);
 
         setSprint(sprintExt);
-        setIssues(issues);
+        setIssues(jiraConvert.analyzeSprintIssues(issues));
     }
-
-    function onTabChange(value: any) {
-        console.log(value);
-    }
-
 
     return (<div className='page-container'>
-        <SprintSelector onSprintSelect={handleSprintSelect} enableMultiple={false}></SprintSelector>
-        <Tabs defaultActiveKey='1' items={tabItems} onChange={onTabChange} />
+        <SprintSelector
+            onSprintSelect={handleSprintSelect}
+            enableMultiple={false}
+        />
+        <Tabs
+            defaultActiveKey='1'
+            items={tabItems}
+        />
     </div>);
 };
 

@@ -2,6 +2,7 @@ import { AxiosInstance, AxiosResponse } from 'axios';
 import config from '../../../config';
 import { Board, Issue, Sprint, SprintReport } from '../../models/JiraData';
 import { getAxiosInstance, setupInterceptors } from '../AxiosService';
+import { jiraConvert } from './JiraDataConvertService';
 
 const { baseApiUrl, debug } = config;
 const BASE_URL: string = baseApiUrl;
@@ -47,7 +48,7 @@ class JiraDataQueryService {
             const params = { type };
 
             const response: AxiosResponse<any> = await this._axios.get('/get-boards', { params });
-            return response.data.values;
+            return response.data;
         } catch (error) {
             console.log("Error fetching boards:", error);
             throw error;
@@ -75,7 +76,7 @@ class JiraDataQueryService {
             }
 
             const response: AxiosResponse<any> = await this._axios.get('/get-sprint-issues', { params });
-            return response.data;
+            return response.data.map(jiraConvert.formatIssue);
 
         } catch (error) {
             console.log("Error fetching issues:", error);
