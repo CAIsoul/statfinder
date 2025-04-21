@@ -155,9 +155,11 @@ const TeamContributionTable: React.FC<TeamContributionTableProps> = ({ issues })
     };
 
     return <Table<ContributionRow>
+        rowKey={(record) => record.name}
         columns={contributionColumns}
         expandable={{ expandedRowRender, defaultExpandedRowKeys: ['0'] }}
         dataSource={getDataSource(issues)}
+        scroll={{y: 400}}
     />;
 };
 
