@@ -105,6 +105,8 @@ export interface Sprint {
     developmentBug?: number;
     existingBug?: number;
     newFeatureTesting?: number;
+    duration?: number;
+    storyPointPerDay?: number;
 }
 
 export interface SprintReport {
@@ -158,6 +160,12 @@ export interface Issue {
     isNewlyAdded?: boolean;
     isRollOvered?: boolean;
     isCompleted?: boolean;
+    storyBugCount?: number;
+    timeSpentTotal?: number;
+    timeSpentOnImplementation?: number;
+    timeSpentOnVerification?: number;
+    timeSpentOnDevTest?: number;
+    timeSpentOnBugFixing?: number;
 }
 
 export interface IssueExtension {
@@ -166,6 +174,10 @@ export interface IssueExtension {
     status: IssueStatus;
     priority: IssuePriority;
 
+    timespent?: number;
+    aggregatetimespent?: number;
+    aggregatetimeoriginalestimate?: number;
+    timeoriginalestimate?: number;
     description?: string;
     updated?: string;
     duedate?: string;
@@ -175,6 +187,7 @@ export interface IssueExtension {
     sprint?: Sprint;
     worklog?: { worklogs: Worklog[] }
     parent?: Issue;
+    closedSprints: Sprint[];
     subtasks: Issue[];
 
     // Story point

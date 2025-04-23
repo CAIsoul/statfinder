@@ -65,6 +65,7 @@ const SprintIssueTable: React.FC<SprintIssueTableProps> = ({ issues }) => {
     const dataSource = issues.map((issue: Issue) => convertToIssueRow(issue));
 
     return <Table<IssueRow>
+        rowKey={(record) => record.key}
         columns={displayIssueColumns}
         dataSource={dataSource}
     />;

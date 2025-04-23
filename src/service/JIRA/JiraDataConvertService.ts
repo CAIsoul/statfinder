@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import config from "../../../config";
 import { Contribution, Issue, IssueStatusEnum, IssueTypeEnum, RoleEnum, Sprint, TeamMember } from "../../models/JiraData";
 import { jiraQuery } from "./JiraDataQueryService";
@@ -20,6 +21,14 @@ class JiraDataConvertService {
     formatIssue(issue: Issue): Issue {
         issue.storyPoint = issue.fields.customfield_10026 ?? 0;
         issue.isCompleted = COMPLETE_STATES.includes(issue.fields.status.name);
+        issue.storyBugCount = 0;
+        issue.timeSpentOnImplementation = 0;
+        issue.timeSpentOnVerification = 0;
+        issue.timeSpentOnDevTest = 0;
+        issue.timeSpentOnBugFixing = 0;
+        issue.timeSpentTotal = issue.fields.timespent ?? 0;
+        issue.isRollOvered = issue.fields.closedSprints?.length > 1;
+
         return issue;
     }
 
@@ -32,9 +41,17 @@ class JiraDataConvertService {
      * @memberof JiraDataConvertService
      */
     async getSprintSummary(sprint: Sprint): Promise<Sprint> {
-        // TBD: analyse sprint stat
+        const duration = dayjs(sprint.endDate).add(1, 'day').diff(dayjs(sprint.startDate), 'day');
         const sprintReport = await jiraQuery.getSprintReport(sprint.originBoardId, sprint.id);
-        const { completedIssues, issuesNotCompletedInCurrentSprint, puntedIssues, issueKeysAddedDuringSprint } = sprintReport.contents;
+
+        if (!sprintReport.contents) {
+            return sprint;
+        }
+
+        const {
+            completedIssues, issuesNotCompletedInCurrentSprint,
+            puntedIssues, issueKeysAddedDuringSprint
+        } = sprintReport.contents;
 
         let totalCommitted = 0;
         let originalCompleted = 0;
@@ -76,6 +93,11 @@ class JiraDataConvertService {
         sprint.totalCommitted = totalCommitted + originalCompleted + originalNotCompleted;
         sprint.totalCompleted = originalCompleted + newlyCompleted;
 
+        if (duration > 0) {
+            sprint.duration = duration;
+            sprint.storyPointPerDay = sprint.totalCompleted / duration;
+        }
+
         return sprint;
     }
 
@@ -94,6 +116,27 @@ class JiraDataConvertService {
             const parent = issue.fields.parent?.key && primaryIssueDict.get(issue.fields.parent.key);
             if (!parent) {
                 return;
+            }
+
+            parent.timeSpentTotal = (parent.timeSpentTotal ?? 0) + (issue.fields.timespent ?? 0);
+
+            switch (issue.fields.issuetype.name) {
+                case IssueTypeEnum.SPRINT_TASK:
+                    if (issue.fields.summary.toLowerCase().includes('dev test')) {
+                        parent.timeSpentOnDevTest = (parent.timeSpentOnDevTest ?? 0) + (issue.fields.timespent ?? 0);
+                    } else {
+                        parent.timeSpentOnImplementation = (parent.timeSpentOnImplementation ?? 0) + (issue.fields.timespent ?? 0);
+                    }
+                    break;
+                case IssueTypeEnum.SPRINT_BUG:
+                    parent.storyBugCount = (parent.storyBugCount ?? 0) + 1;
+                    parent.timeSpentOnBugFixing = (parent.timeSpentOnBugFixing ?? 0) + (issue.fields.timespent ?? 0);
+                    break;
+                case IssueTypeEnum.SUB_TEST_EXECUTION:
+                    parent.timeSpentOnVerification = (parent.timeSpentOnVerification ?? 0) + (issue.fields.timespent ?? 0);
+                    break;
+                default:
+                    break;
             }
 
             const match = parent.fields.subtasks.find(t => t.id === issue.id);

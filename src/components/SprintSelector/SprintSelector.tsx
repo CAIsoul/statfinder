@@ -109,19 +109,6 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple
     function onApplyClick() {
         let selectedSprints = sprintOptions.filter((s: Sprint) => selectedSprintIds.includes(s.id));
 
-        // if (config.debug) {
-        //     selectedSprints = [{
-        //         id: DEFAULT_SPRINTIDS[0],
-        //         originBoardId: DEFAULT_BOARDID,
-        //         name: 'Mock Sprint',
-        //         goal: '',
-        //         state: SprintStateEnum.ACTIVE,
-        //         startDate: new Date().toISOString(),
-        //         endDate: new Date().toISOString(),
-        //         completeDate: new Date().toISOString(),
-        //     }];
-        // }
-
         onSprintSelect(selectedSprints);
     }
 

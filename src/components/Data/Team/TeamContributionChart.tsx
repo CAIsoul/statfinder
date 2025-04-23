@@ -23,7 +23,7 @@ const TeamContributionChart: React.FC<TeamContributionChartProps> = ({ issues })
 
     return <ReactECharts
         option={eChartOptions}
-        style={{ height: '300px', width: '600px' }}
+        style={{ height: '300px', width: '800px' }}
     />;
 };
 

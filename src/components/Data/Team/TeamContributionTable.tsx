@@ -1,6 +1,7 @@
 import config from "../../../../config";
 import { Issue, IssueExtension, IssueRow } from "../../../models/JiraData";
 import { Table, TableColumnsType } from "antd";
+import DistributionBar from "../DistributionBar/DistributionBar";
 
 interface TeamContributionTableProps {
     issues: Issue[];
@@ -103,17 +104,20 @@ const TeamContributionTable: React.FC<TeamContributionTableProps> = ({ issues })
             title: 'Count',
             dataIndex: 'count',
             key: 'count',
+            width: 100,
         },
         {
             title: 'Max',
             dataIndex: 'max',
             key: 'max',
+            width: 100,
         },
         {
             title: 'Average',
             dataIndex: 'average',
             key: 'average',
             render: (average: number = 0) => average.toFixed(2),
+            width: 100,
         }
     ];
 
@@ -130,6 +134,7 @@ const TeamContributionTable: React.FC<TeamContributionTableProps> = ({ issues })
             dataIndex: 'fields',
             key: 'summary',
             render: (fields: IssueExtension) => <>{fields.summary}</>,
+            width: 300,
         },
         {
             title: 'Story Point',
@@ -144,6 +149,70 @@ const TeamContributionTable: React.FC<TeamContributionTableProps> = ({ issues })
             width: 150,
             render: (isCompleted: boolean) => isCompleted ? 'Completed' : 'Not Completed',
         },
+        {
+            title: 'Bug Count',
+            dataIndex: 'storyBugCount',
+            key: 'storyBugCount',
+            width: 120,
+        },
+        {
+            title: 'Original Estimate',
+            dataIndex: 'fields',
+            key: 'originalEstimate',
+            width: 120,
+            render: (fields: IssueExtension) => `${(fields.aggregatetimeoriginalestimate ?? 0) / 60 / 60} hrs`,
+        },
+        {
+            title: 'Time Spent',
+            dataIndex: 'timeSpentTotal',
+            key: 'timeSpentTotal',
+            width: 120,
+            render: (val: number) => <>{`${(val / 60 / 60).toFixed(1)} hrs`}</>,
+        },
+        {
+            title: 'Time Distribution',
+            key: 'timeDistribution',
+            width: 200,
+            render: (data: Issue) =>
+                <DistributionBar
+                    items={[
+                        {
+                            name: 'Implementation',
+                            value: data.timeSpentOnImplementation ?? 0,
+                            color: 'green',
+                        },
+                        {
+                            name: 'Dev Test',
+                            value: data.timeSpentOnDevTest ?? 0,
+                            color: 'lightgreen',
+                        },
+                        {
+                            name: 'Bug Fixing',
+                            value: data.timeSpentOnBugFixing ?? 0,
+                            color: 'red',
+                        },
+                        {
+                            name: 'QA Verification',
+                            value: data.timeSpentOnVerification ?? 0,
+                            color: 'blue',
+                        }
+                    ]}
+                />
+        },
+        {
+            title: 'Rollover',
+            dataIndex: 'isRollover',
+            key: 'isRollover',
+            width: 150,
+            render: (isRollover: boolean) => isRollover ? 'Yes' : 'No',
+        },
+        {
+            title: 'Act. vs Est.',
+            dataIndex: 'fields',
+            key: 'actualVsEstimate',
+            width: 150,
+            render: (fields: IssueExtension) => `${!fields.aggregatetimeoriginalestimate ? 'N/A' : `${((fields.aggregatetimespent ?? 0) * 100 / fields.aggregatetimeoriginalestimate).toFixed(2)}%`}`,
+        }
     ];
 
     const expandedRowRender = (record: ContributionRow) => {
@@ -157,9 +226,12 @@ const TeamContributionTable: React.FC<TeamContributionTableProps> = ({ issues })
     return <Table<ContributionRow>
         rowKey={(record) => record.name}
         columns={contributionColumns}
-        expandable={{ expandedRowRender, defaultExpandedRowKeys: ['0'] }}
+        expandable={{
+            expandedRowRender,
+            rowExpandable: (record) => record.issues.length > 0,
+        }}
         dataSource={getDataSource(issues)}
-        scroll={{y: 400}}
+        scroll={{ y: 500, x: 800 }}
     />;
 };
 

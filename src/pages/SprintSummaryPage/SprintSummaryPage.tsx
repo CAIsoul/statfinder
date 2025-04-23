@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Descriptions, DescriptionsProps, Tabs, TabsProps } from 'antd';
-import dayjs from 'dayjs';
+import { Tabs, TabsProps } from 'antd';
 
 
 import './SprintSummaryPage.scss';
@@ -11,84 +10,13 @@ import { jiraConvert } from '../../service/JIRA/JiraDataConvertService';
 import TeamContributionTable from '../../components/Data/Team/TeamContributionTable';
 import SprintIssueTable from '../../components/Data/Sprint/SprintIssueTable';
 import TeamContributionChart from '../../components/Data/Team/TeamContributionChart';
+import SprintInfo from '../../components/Data/Sprint/SprintInfo';
 
 interface PageProp { };
 
 const SprintSummaryPage: React.FC<PageProp> = () => {
     const [issues, setIssues] = useState<Issue[]>([]);
     const [sprint, setSprint] = useState<Sprint>();
-
-    const dateFormat = "YYYY-MM-DD";
-
-
-    const descpItems: DescriptionsProps['items'] = [
-        {
-            key: '1',
-            label: 'Start Date',
-            children: dayjs(sprint?.startDate).format(dateFormat),
-            span: 2
-        },
-        {
-            key: '2',
-            label: 'End Date',
-            children: dayjs(sprint?.endDate).format(dateFormat),
-            span: 2
-        },
-        {
-            key: '3',
-            label: 'Sprint Status',
-            children: sprint?.state ?? 'Unknown',
-            span: 2
-        },
-        {
-            key: '4',
-            label: 'Complete Date',
-            children: sprint?.completeDate ? dayjs(sprint?.completeDate).format(dateFormat) : 'Not yet completed',
-            span: 2
-        },
-        {
-            key: '5',
-            label: 'Sprint Goal',
-            children: sprint?.goal ?? 'No goal set',
-            span: 3
-        },
-        {
-            key: '6',
-            label: 'Original Committed',
-            children: sprint?.originalCommitted ?? 0,
-            span: 2
-        },
-        {
-            key: '7',
-            label: 'Original Completed',
-            children: sprint?.originalCompleted ?? 0,
-            span: 2
-        },
-        {
-            key: '8',
-            label: 'Completion Rate',
-            children: `${sprint?.originalCommitted ? ((sprint?.originalCompleted ?? 0) / sprint?.originalCommitted * 100).toFixed(1) : 0}%`,
-            span: 4
-        },
-        {
-            key: '9',
-            label: 'Newly Added',
-            children: sprint?.newlyAdded ?? 0,
-            span: 2,
-        },
-        {
-            key: '10',
-            label: 'Newly Added Completed',
-            children: sprint?.newlyCompleted ?? 0,
-            span: 2,
-        },
-        {
-            key: '11',
-            label: 'Total Completed',
-            children: sprint?.totalCompleted ?? 0,
-            span: 2,
-        },
-    ];
 
     const tabItems: TabsProps['items'] = [
         {
@@ -128,17 +56,18 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         }
 
         return (
-            <Descriptions
-                title={sprint.name}
-                items={descpItems}
-                bordered
-            />
+            <SprintInfo sprint={sprint} />
         );
     }
 
     function renderIssuesTab() {
         return (
-            <SprintIssueTable issues={issues} />
+            <>
+                {
+                    Array.isArray(issues) && issues.length > 0 &&
+                    <SprintIssueTable issues={issues} />
+                }
+            </>
         );
     }
 
@@ -157,11 +86,13 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
     }
 
     return (<div className='page-container'>
-        <SprintSelector
-            onSprintSelect={handleSprintSelect}
-            enableMultiple={false}
-        />
-        <Tabs
+        <>
+            <SprintSelector
+                onSprintSelect={handleSprintSelect}
+                enableMultiple={false}
+            />
+        </>
+        <Tabs style={{ flex: 1, overflowY: 'auto' }}
             defaultActiveKey='1'
             items={tabItems}
         />
