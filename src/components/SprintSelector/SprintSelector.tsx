@@ -121,8 +121,6 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple
                 >
                     <Button>{selectedTeam || "Select team..."}</Button>
                 </Dropdown>
-            </Space>
-            <Space wrap>
                 <Dropdown
                     menu={{ items: boardTypes, onClick: onBoardTypeChange }}
                     placement="bottom"

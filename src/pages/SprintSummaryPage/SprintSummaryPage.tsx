@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tabs, TabsProps } from 'antd';
+import { Empty, Tabs, TabsProps } from 'antd';
 
 
 import './SprintSummaryPage.scss';
@@ -40,23 +40,19 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         return (
             <>
                 {
-                    Array.isArray(issues) && issues.length > 0 &&
-                    <>
-                        <TeamContributionChart issues={issues} />
-                        <TeamContributionTable issues={issues} />
-                    </>
+                    (Array.isArray(issues) && issues.length > 0) ?
+                        <>
+                            <TeamContributionChart issues={issues} />
+                            <TeamContributionTable issues={issues} />
+                        </> : <Empty />
                 }
             </>
         );
     }
 
     function renderInfoTab() {
-        if (!sprint) {
-            return;
-        }
-
         return (
-            <SprintInfo sprint={sprint} />
+            sprint ? <SprintInfo sprint={sprint} /> : <Empty />
         );
     }
 
@@ -64,8 +60,8 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         return (
             <>
                 {
-                    Array.isArray(issues) && issues.length > 0 &&
-                    <SprintIssueTable issues={issues} />
+                    (Array.isArray(issues) && issues.length > 0) ?
+                        <SprintIssueTable issues={issues} /> : <Empty />
                 }
             </>
         );

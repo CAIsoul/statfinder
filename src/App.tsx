@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { Routes, Route } from 'react-router';
 import { Breadcrumb, Layout, theme } from 'antd';
-import { ProjectOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons';
+import { ProjectOutlined, UserOutlined } from '@ant-design/icons';
 import Header from './components/Header/Header';
 import Sider from './components/Sider/Sider';
 import './App.scss'
@@ -12,6 +12,8 @@ import WelcomePage from './pages/WelcomePage/WelcomePage';
 import { useLoading } from './components/LoadingIndicator/LoadingContext';
 import { jiraQuery } from './service/JIRA/JiraDataQueryService';
 import SprintComparePage from './pages/SprintComparePage/SprintComparePage';
+import MemberPerformance from './pages/MemberPerformance/MemberPerformance';
+import MemberCompare from './pages/MemberCompare/MemberCompare';
 
 const navItems: NavItem[] = [
   {
@@ -43,25 +45,31 @@ const navItems: NavItem[] = [
         Route: '',
         SubItems: [
           {
-            Name: 'summary',
-            Label: 'Summary',
-            Route: 'member-summary',
+            Name: 'performance',
+            Label: 'Performance',
+            Route: 'member-performance',
+          },
+          {
+            Name: 'compare',
+            Label: 'Compare',
+            Route: 'member-compare',
           }
         ],
       },
-      {
-        Name: 'team',
-        Label: 'Team',
-        Icon: TeamOutlined,
-        Route: '',
-        SubItems: [
-          {
-            Name: 'summary',
-            Label: 'Summary',
-            Route: 'team-summary',
-          }
-        ],
-      }]
+      // {
+      //   Name: 'team',
+      //   Label: 'Team',
+      //   Icon: TeamOutlined,
+      //   Route: '',
+      //   SubItems: [
+      //     {
+      //       Name: 'summary',
+      //       Label: 'Summary',
+      //       Route: 'team-summary',
+      //     }
+      //   ],
+      // }
+    ]
   }
 ];
 
@@ -92,6 +100,8 @@ const App: React.FC = () => {
             <Route path="/" element={<WelcomePage />}></Route>
             <Route path="/sprint-summary" element={<SprintSummaryPage />}></Route>
             <Route path="/sprint-compare" element={<SprintComparePage />} ></Route>
+            <Route path="/member-performance" element={<MemberPerformance />} ></Route>
+            <Route path="/member-compare" element={<MemberCompare />} ></Route>
             <Route path="*" element={<WelcomePage />}></Route>
           </Routes>
         </Layout>

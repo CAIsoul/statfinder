@@ -90,6 +90,7 @@ export interface Sprint {
     endDate: string;
     completeDate: string;
     originBoardId: number;
+    duration: number;
 
     originalCommitted?: number;
     originalCompleted?: number;
@@ -105,7 +106,6 @@ export interface Sprint {
     developmentBug?: number;
     existingBug?: number;
     newFeatureTesting?: number;
-    duration?: number;
     storyPointPerDay?: number;
 }
 

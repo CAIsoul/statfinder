@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import config from "../../../config";
 import { Contribution, Issue, IssueStatusEnum, IssueTypeEnum, RoleEnum, Sprint, TeamMember } from "../../models/JiraData";
 import { jiraQuery } from "./JiraDataQueryService";
+import { MemberMetric } from "../../models/PerformanceMetric";
 
 const PRIMARY_ISSUE_TYPES = [
     IssueTypeEnum.STORY,
@@ -210,6 +211,83 @@ class JiraDataConvertService {
         });
 
         return contributions;
+    }
+
+    calculateSprintMemberMetrics(sprint: Sprint, issues: Issue[]): Map<string, MemberMetric> {
+        const primaryIssues = this.analyzeSprintIssues(issues);
+        const memberMetricDict: Map<string, MemberMetric> = new Map();
+
+        primaryIssues.forEach(issue => {
+            const member = issue.contributions[0]?.Contributor;
+            if (!member) {
+                return;
+            }
+
+            let metric = memberMetricDict.get(member.name);
+            if (!metric) {
+                metric = {
+                    name: member.name,
+                    issueCount: 0,
+                    commitedPoints: 0,
+                    completedPoints: 0,
+                    commitedPointsPerDay: 0,
+                    completedPointsPerDay: 0,
+                    newFeaturePoints: 0,
+                    backlogBugPoints: 0,
+                    maxTaskPoint: 0,
+                    avgTaskPoint: 0,
+                    newFeatureActualSum: 0,
+                    newFeatureEstimateSum: 0,
+                    backlogBugActualSum: 0,
+                    backlogBugEstimateSum: 0,
+                    newBugCount: 0,
+                    newBugCountPerPoint: 0,
+                    newFeatureActEst: 0,
+                    backlogBugActEst: 0
+                };
+
+                memberMetricDict.set(member.name, metric);
+            }
+
+            metric.issueCount++;
+            metric.commitedPoints += issue.storyPoint;
+
+            if (issue.storyPoint > metric.maxTaskPoint) {
+                metric.maxTaskPoint = issue.storyPoint;
+            }
+
+            if (issue.isCompleted) {
+                metric.completedPoints += issue.storyPoint;
+            }
+
+            switch (issue.fields.issuetype.name) {
+                case IssueTypeEnum.STORY:
+                case IssueTypeEnum.CHANGE_REQUEST:
+                    metric.newFeaturePoints += issue.storyPoint;
+                    metric.newFeatureActualSum += issue.fields.aggregatetimespent ?? 0;
+                    metric.newFeatureEstimateSum += issue.fields.aggregatetimeoriginalestimate ?? 0;
+                    metric.newBugCount += issue.storyBugCount ?? 0;
+                    break;
+                case IssueTypeEnum.BUG:
+                    metric.backlogBugPoints += issue.storyPoint;
+                    metric.backlogBugActualSum += issue.fields.aggregatetimespent ?? 0;
+                    metric.backlogBugEstimateSum += issue.fields.aggregatetimeoriginalestimate ?? 0;
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        for (const metric of memberMetricDict.values()) {
+            metric.avgTaskPoint = metric.commitedPoints / metric.issueCount;
+            metric.newFeatureActEst = metric.newFeatureActualSum / metric.newFeatureEstimateSum;
+            metric.backlogBugActEst = metric.backlogBugActualSum / metric.backlogBugEstimateSum;
+            metric.newBugCountPerPoint = metric.newBugCount / metric.newFeaturePoints;
+            metric.commitedPointsPerDay = metric.commitedPoints / sprint.duration;
+            metric.completedPointsPerDay = metric.completedPoints / sprint.duration;
+        }
+
+        return memberMetricDict;
     }
 }
 
