@@ -35,6 +35,10 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({ onMemberSelect, enableM
         onMemberSelect(memberOptions.filter(m => m.name === value));
     };
 
+    const handleMultipleMemberChange = (value: string[]) => {
+        onMemberSelect(memberOptions.filter(m => value.includes(m.name)));
+    };
+
 
     return (
         <div className='member-selector'>
@@ -53,7 +57,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({ onMemberSelect, enableM
                     allowClear
                     placeholder="Select member"
                     options={memberOptions.map(m => ({ value: m.name, label: m.name }))}
-                    onChange={handleMemberChange}
+                    onChange={handleMultipleMemberChange}
                 /> :
                     <Select
                         className='member-select'
