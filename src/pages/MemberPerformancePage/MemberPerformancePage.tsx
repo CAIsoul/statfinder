@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import SprintSelector from '../../components/SprintSelector/SprintSelector';
 import MemberSelector from '../../components/MemberSelector/MemberSelector';
 import { Empty, Tabs } from 'antd';
-import { Issue, Sprint, TeamMember } from '../../models/JiraData';
+import { Sprint, TeamMember } from '../../models/JiraData';
 import { jiraConvert } from '../../service/JIRA/JiraDataConvertService';
-import { jiraQuery } from '../../service/JIRA/JiraDataQueryService';
 import MemberInfo from '../../components/Data/Member/MemberInfo';
 import MemberSprints from '../../components/Data/Member/MemberSprints';
+import { MemberMetric } from '../../models/PerformanceMetric';
+import MemberMetrics from '../../components/Data/Member/MemberMetrics';
 
 const MemberPerformance: React.FC = () => {
     const [member, setMember] = useState<TeamMember>();
-    const [sprintData, setSprintData] = useState<[Sprint, Issue[]][]>([]);
+    const [sprintMetricDicts, setSprintMetricDicts] = useState<Map<string, MemberMetric>[]>([]);
 
     const tabItems = [
         {
@@ -21,7 +22,7 @@ const MemberPerformance: React.FC = () => {
         {
             key: '2',
             label: 'Sprints',
-            children: (member && Array.isArray(sprintData) && sprintData.length > 0) ? <MemberSprints member={member} sprintData={sprintData} /> : <Empty />,
+            children: (member && sprintMetricDicts.length > 0) ? <MemberSprints sprintMetrics={sprintMetricDicts.map((dict) => dict.get(member.name)).filter((metric) => metric !== undefined) as MemberMetric[]} /> : <Empty />,
         },
         {
             key: '3',
@@ -31,24 +32,13 @@ const MemberPerformance: React.FC = () => {
         {
             key: '4',
             label: 'Metrics',
-            children: <div>Metrics</div>,
+            children: (member && sprintMetricDicts.length > 0) ? <MemberMetrics sprintMetrics={sprintMetricDicts.map((dict) => dict.get(member.name)).filter((metric) => metric !== undefined) as MemberMetric[]} /> : <Empty />,
         }
     ];
 
-    function handleSprintSelect(sprints: Sprint[]) {
-        const requestTasks = sprints.map(s => {
-            return Promise.all([
-                jiraConvert.getSprintSummary(s),
-                jiraQuery.getIssuesBySprintId(s.id)
-            ]);
-        });
-
-        Promise.allSettled(requestTasks).then((results) => {
-            const sprintDataList = results.filter((res) => res.status === 'fulfilled').map((res) => res.value);
-
-            sprintDataList.sort((a, b) => a[0].startDate > b[0].startDate ? 1 : -1);
-            setSprintData(sprintDataList);
-        });
+    async function handleSprintSelect(boardId: number, sprints: Sprint[]) {
+        const sprintMetrics = await jiraConvert.getSprintsMetrics(boardId, sprints);
+        setSprintMetricDicts(sprintMetrics);
     }
 
     function handleMemberSelect(members: TeamMember[]) {
@@ -58,7 +48,7 @@ const MemberPerformance: React.FC = () => {
     return (
         <div className='page-container'>
             <div className='control-container'>
-                <MemberSelector onMemberSelect={handleMemberSelect} enableMultiple={true} />
+                <MemberSelector onMemberSelect={handleMemberSelect} enableMultiple={false} />
                 <SprintSelector onSprintSelect={handleSprintSelect} enableMultiple={true} />
             </div>
             <div className='content-container'>

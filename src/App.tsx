@@ -12,8 +12,8 @@ import WelcomePage from './pages/WelcomePage/WelcomePage';
 import { useLoading } from './components/LoadingIndicator/LoadingContext';
 import { jiraQuery } from './service/JIRA/JiraDataQueryService';
 import SprintComparePage from './pages/SprintComparePage/SprintComparePage';
-import MemberPerformance from './pages/MemberPerformance/MemberPerformance';
-import MemberCompare from './pages/MemberCompare/MemberCompare';
+import MemberPerformance from './pages/MemberPerformancePage/MemberPerformancePage';
+import MemberCompare from './pages/MemberComparePage/MemberComparePage';
 
 const navItems: NavItem[] = [
   {

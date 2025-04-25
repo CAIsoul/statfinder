@@ -9,7 +9,7 @@ import { UpperCaseFirstChar } from '../../service/StringFormatService';
 import config from '../../../config';
 
 interface SelectorProp {
-    onSprintSelect: any,
+    onSprintSelect: (boardId: number, sprints: Sprint[]) => void,
     enableMultiple: boolean,
 };
 
@@ -109,7 +109,7 @@ const SprintSelector: React.FC<SelectorProp> = ({ onSprintSelect, enableMultiple
     function onApplyClick() {
         let selectedSprints = sprintOptions.filter((s: Sprint) => selectedSprintIds.includes(s.id));
 
-        onSprintSelect(selectedSprints);
+        onSprintSelect(selectedBoardId, selectedSprints);
     }
 
     return (

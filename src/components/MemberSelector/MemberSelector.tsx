@@ -38,20 +38,32 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({ onMemberSelect, enableM
 
     return (
         <div className='member-selector'>
-            <Select
+            <Select className='team-select'
                 showSearch
                 allowClear
                 placeholder="Select team"
                 options={teamOptions}
                 onChange={handleTeamChange}
             />
-            <Select
-                showSearch
-                allowClear
-                placeholder="Select member"
-                options={memberOptions.map(m => ({ value: m.name, label: m.name }))}
-                onChange={handleMemberChange}
-            />
+            {
+                enableMultiple ? <Select
+                    className='member-select-multiple'
+                    mode={'multiple'}
+                    showSearch
+                    allowClear
+                    placeholder="Select member"
+                    options={memberOptions.map(m => ({ value: m.name, label: m.name }))}
+                    onChange={handleMemberChange}
+                /> :
+                    <Select
+                        className='member-select'
+                        allowClear
+                        showSearch
+                        placeholder="Select member"
+                        options={memberOptions.map(m => ({ value: m.name, label: m.name }))}
+                        onChange={handleMemberChange}
+                    />
+            }
         </div>
     );
 };

@@ -166,6 +166,7 @@ export interface Issue {
     timeSpentOnVerification?: number;
     timeSpentOnDevTest?: number;
     timeSpentOnBugFixing?: number;
+    isCompletedInCurrentSprint?: boolean;
 }
 
 export interface IssueExtension {

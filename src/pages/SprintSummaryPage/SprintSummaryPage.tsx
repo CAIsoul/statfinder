@@ -67,7 +67,7 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         );
     }
 
-    async function handleSprintSelect(sprints: Sprint[]) {
+    async function handleSprintSelect(boardId: number, sprints: Sprint[]) {
         const sprint = sprints[0];
 
         if (!sprint) {
@@ -75,10 +75,10 @@ const SprintSummaryPage: React.FC<PageProp> = () => {
         }
 
         const issues: Issue[] = await jiraQuery.getIssuesBySprintId(sprint.id);
-        const sprintExt = await jiraConvert.getSprintSummary(sprint);
+        const sprintExt = await jiraConvert.getSprintSummary(boardId, sprint);
 
         setSprint(sprintExt);
-        setIssues(jiraConvert.analyzeSprintIssues(issues));
+        setIssues(jiraConvert.analyzeSprintIssues(sprintExt, issues));
     }
 
     return (<div className='page-container'>

@@ -41,9 +41,9 @@ class JiraDataConvertService {
      * @return {*}  {Sprint}
      * @memberof JiraDataConvertService
      */
-    async getSprintSummary(sprint: Sprint): Promise<Sprint> {
+    async getSprintSummary(boardId: number, sprint: Sprint): Promise<Sprint> {
         const duration = dayjs(sprint.endDate).add(1, 'day').diff(dayjs(sprint.startDate), 'day');
-        const sprintReport = await jiraQuery.getSprintReport(sprint.originBoardId, sprint.id);
+        const sprintReport = await jiraQuery.getSprintReport(boardId, sprint.id);
 
         if (!sprintReport.contents) {
             return sprint;
@@ -102,12 +102,18 @@ class JiraDataConvertService {
         return sprint;
     }
 
-    analyzeSprintIssues(issues: Issue[]) {
+    analyzeSprintIssues(sprint: Sprint, issues: Issue[]) {
         const primaryIssueDict = new Map<string, Issue>();
 
         // Iterate through all primary issues first
         issues.forEach(issue => {
             if (PRIMARY_ISSUE_TYPES.includes(issue.fields.issuetype.name)) {
+                if (COMPLETE_STATES.includes(issue.fields.status.name)) {
+                    const matchedClosedSprint = issue.fields.closedSprints.find(s => s.id === sprint.id);
+                    issue.isCompletedInCurrentSprint = matchedClosedSprint
+                        && issue.fields.closedSprints.every(s => s.startDate <= matchedClosedSprint.startDate);
+                }
+
                 primaryIssueDict.set(issue.key, issue);
             }
         });
@@ -214,8 +220,9 @@ class JiraDataConvertService {
     }
 
     calculateSprintMemberMetrics(sprint: Sprint, issues: Issue[]): Map<string, MemberMetric> {
-        const primaryIssues = this.analyzeSprintIssues(issues);
+        const primaryIssues = this.analyzeSprintIssues(sprint, issues);
         const memberMetricDict: Map<string, MemberMetric> = new Map();
+        const { duration, totalCommitted = 0, totalCompleted = 0 } = sprint;
 
         primaryIssues.forEach(issue => {
             const member = issue.contributions[0]?.Contributor;
@@ -243,7 +250,9 @@ class JiraDataConvertService {
                     newBugCount: 0,
                     newBugCountPerPoint: 0,
                     newFeatureActEst: 0,
-                    backlogBugActEst: 0
+                    backlogBugActEst: 0,
+                    commitedRatio: 0,
+                    completedRatio: 0
                 };
 
                 memberMetricDict.set(member.name, metric);
@@ -256,7 +265,7 @@ class JiraDataConvertService {
                 metric.maxTaskPoint = issue.storyPoint;
             }
 
-            if (issue.isCompleted) {
+            if (issue.isCompletedInCurrentSprint) {
                 metric.completedPoints += issue.storyPoint;
             }
 
@@ -283,11 +292,30 @@ class JiraDataConvertService {
             metric.newFeatureActEst = metric.newFeatureActualSum / metric.newFeatureEstimateSum;
             metric.backlogBugActEst = metric.backlogBugActualSum / metric.backlogBugEstimateSum;
             metric.newBugCountPerPoint = metric.newBugCount / metric.newFeaturePoints;
-            metric.commitedPointsPerDay = metric.commitedPoints / sprint.duration;
-            metric.completedPointsPerDay = metric.completedPoints / sprint.duration;
+            metric.commitedPointsPerDay = metric.commitedPoints / duration;
+            metric.completedPointsPerDay = metric.completedPoints / duration;
+            metric.commitedRatio = totalCommitted ? metric.commitedPoints / totalCommitted : 0;
+            metric.completedRatio = totalCompleted ? metric.completedPoints / totalCompleted : 0;
         }
 
         return memberMetricDict;
+    }
+
+    async getSprintsMetrics(boardId: number, sprints: Sprint[]): Promise<Map<string, MemberMetric>[]> {
+        const requestTasks = sprints.map(s => {
+            return Promise.all([
+                jiraConvert.getSprintSummary(boardId, s),
+                jiraQuery.getIssuesBySprintId(s.id)
+            ]);
+        });
+
+        return Promise.allSettled(requestTasks).then((results) => {
+            const sprintDataList = results.filter((res) => res.status === 'fulfilled').map((res) => res.value);
+
+            sprintDataList.sort((a, b) => a[0].startDate > b[0].startDate ? 1 : -1);
+
+            return sprintDataList.map(([sprint, issues]) => jiraConvert.calculateSprintMemberMetrics(sprint, issues));
+        });
     }
 }
 

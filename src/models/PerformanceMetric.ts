@@ -8,6 +8,9 @@ export interface MemberMetric {
     commitedPointsPerDay: number;
     completedPointsPerDay: number;
 
+    commitedRatio: number;
+    completedRatio: number;
+
     newFeaturePoints: number;
     backlogBugPoints: number;
 

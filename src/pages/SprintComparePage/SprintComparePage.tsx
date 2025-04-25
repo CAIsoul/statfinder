@@ -10,8 +10,8 @@ const SprintComparePage: React.FC = () => {
 
     const [sprints, setSprints] = useState<Sprint[]>([]);
 
-    async function handleSprintSelect(sprints: Sprint[]) {
-        const requestTasks = sprints.map((sprint) => jiraConvert.getSprintSummary(sprint));
+    async function handleSprintSelect(boardId: number, sprints: Sprint[]) {
+        const requestTasks = sprints.map((sprint) => jiraConvert.getSprintSummary(boardId, sprint));
         Promise.allSettled(requestTasks).then((results) => {
             const sprintSummaries = results.filter((res) => res.status === 'fulfilled').map((res) => res.value);
 

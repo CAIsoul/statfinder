@@ -42,7 +42,7 @@ function getDataSource(issues: Issue[]): ContributionRow[] {
         for (const issue of issues) {
             committed += issue.storyPoint;
 
-            if (issue.isCompleted) {
+            if (issue.isCompletedInCurrentSprint) {
                 completed += issue.storyPoint;
             }
 
@@ -144,7 +144,7 @@ const TeamContributionTable: React.FC<TeamContributionTableProps> = ({ issues })
         },
         {
             title: 'Status',
-            dataIndex: 'isCompleted',
+            dataIndex: 'isCompletedInCurrentSprint',
             key: 'status',
             width: 150,
             render: (isCompleted: boolean) => isCompleted ? 'Completed' : 'Not Completed',
@@ -198,13 +198,6 @@ const TeamContributionTable: React.FC<TeamContributionTableProps> = ({ issues })
                         }
                     ]}
                 />
-        },
-        {
-            title: 'Rollover',
-            dataIndex: 'isRollover',
-            key: 'isRollover',
-            width: 150,
-            render: (isRollover: boolean) => isRollover ? 'Yes' : 'No',
         },
         {
             title: 'Act. vs Est.',
