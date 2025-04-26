@@ -8,7 +8,6 @@ import MemberCompare from '../../components/Data/Member/MemberCompare';
 
 const MemberComparePage: React.FC = () => {
     const [memberList, setMemberList] = useState<TeamMember[]>([]);
-    const [sprintList, setSprintList] = useState<Sprint[]>([]);
     const [sprintMetricDicts, setSprintMetricDicts] = useState<Map<string, MemberMetric>[]>([]);
 
     function handleMemberSelect(members: TeamMember[]) {

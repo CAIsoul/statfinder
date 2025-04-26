@@ -24,7 +24,6 @@ const MemberMetrics: React.FC<MemberMetricsProps> = ({ sprintMetrics }) => {
 
     function getPerformanceChartOptions() {
         let maxPoint = Math.max(...sprintMetrics.map((metric) => metric.commitedPoints));
-        let maxRatio = Math.max(...sprintMetrics.map((metric) => Math.max(metric.commitedRatio, metric.completedRatio)));
 
         return {
             xAxis: {
@@ -71,7 +70,7 @@ const MemberMetrics: React.FC<MemberMetricsProps> = ({ sprintMetrics }) => {
         };
     }
     function handleEChartSelectionChange(event: any) {
-        console.log(event);
+        setEChartType(event.key);
     }
 
     function getEChartOptions(eChartType: string) {

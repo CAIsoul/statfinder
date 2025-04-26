@@ -20,24 +20,27 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({ onMemberSelect, enableM
         value: team,
         label: team,
     }));
-    const [memberOptions, setMemberOptions] = useState<TeamMember[]>([]);
 
     const [selectedTeam, setSelectedTeam] = useState<string>('');
     const [selectedMember, setSelectedMember] = useState<string>('');
 
     const handleTeamChange = (value: string) => {
         setSelectedTeam(value);
-        setMemberOptions(config.teamMembers[value] ?? []);
     };
 
     const handleMemberChange = (value: string) => {
         setSelectedMember(value);
-        onMemberSelect(memberOptions.filter(m => m.name === value));
+
+        onMemberSelect(config.teamMembers[selectedTeam].filter((m: TeamMember) => m.name === selectedMember));
     };
 
     const handleMultipleMemberChange = (value: string[]) => {
-        onMemberSelect(memberOptions.filter(m => value.includes(m.name)));
+        onMemberSelect(config.teamMembers[selectedTeam].filter((m: TeamMember) => value.includes(m.name)));
     };
+
+    function getMemberOptions() {
+        return config.teamMembers[selectedTeam].map((m: TeamMember) => ({ value: m.name, label: m.name }));
+    }
 
 
     return (
@@ -56,7 +59,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({ onMemberSelect, enableM
                     showSearch
                     allowClear
                     placeholder="Select member"
-                    options={memberOptions.map(m => ({ value: m.name, label: m.name }))}
+                    options={getMemberOptions()}
                     onChange={handleMultipleMemberChange}
                 /> :
                     <Select
@@ -64,7 +67,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({ onMemberSelect, enableM
                         allowClear
                         showSearch
                         placeholder="Select member"
-                        options={memberOptions.map(m => ({ value: m.name, label: m.name }))}
+                        options={getMemberOptions()}
                         onChange={handleMemberChange}
                     />
             }
