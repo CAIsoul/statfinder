@@ -39,7 +39,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({ onMemberSelect, enableM
     };
 
     function getMemberOptions() {
-        return config.teamMembers[selectedTeam].map((m: TeamMember) => ({ value: m.name, label: m.name }));
+        return (config.teamMembers[selectedTeam] ?? []).map((m: TeamMember) => ({ value: m.name, label: m.name }));
     }
 
 

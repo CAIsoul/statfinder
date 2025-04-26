@@ -14,6 +14,7 @@ import { jiraQuery } from './service/JIRA/JiraDataQueryService';
 import SprintComparePage from './pages/SprintComparePage/SprintComparePage';
 import MemberPerformance from './pages/MemberPerformancePage/MemberPerformancePage';
 import MemberCompare from './pages/MemberComparePage/MemberComparePage';
+import config from '../config';
 
 const navItems: NavItem[] = [
   {
@@ -97,11 +98,11 @@ const App: React.FC = () => {
             style={{ margin: '16px 0' }}
           />
           <Routes>
-            <Route path="/" element={<WelcomePage />}></Route>
-            <Route path="/sprint-summary" element={<SprintSummaryPage />}></Route>
-            <Route path="/sprint-compare" element={<SprintComparePage />} ></Route>
-            <Route path="/member-performance" element={<MemberPerformance />} ></Route>
-            <Route path="/member-compare" element={<MemberCompare />} ></Route>
+            <Route path={`${config.basename}/`} element={<WelcomePage />}></Route>
+            <Route path={`${config.basename}/sprint-summary`} element={<SprintSummaryPage />}></Route>
+            <Route path={`${config.basename}/sprint-compare`} element={<SprintComparePage />} ></Route>
+            <Route path={`${config.basename}/member-performance`} element={<MemberPerformance />} ></Route>
+            <Route path={`${config.basename}/member-compare`} element={<MemberCompare />} ></Route>
             <Route path="*" element={<WelcomePage />}></Route>
           </Routes>
         </Layout>
